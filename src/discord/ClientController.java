@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Client implements Serializable {
+public class ClientController implements Serializable {
 
     private final Model user;
     private static View view;
@@ -21,7 +21,7 @@ public class Client implements Serializable {
         Online, Idle, DoNotDisturb, Invisible, Offline
     }
 
-    public Client(String username, String password, String email, String phoneNumber) {
+    public ClientController(String username, String password, String email, String phoneNumber) {
         user = new Model(username, password, email, phoneNumber);
         friendRequests = new LinkedList<>();
         friends = new LinkedList<>();
@@ -36,17 +36,17 @@ public class Client implements Serializable {
         return friendRequests;
     }
 
-    private static Client login() {
+    private static ClientController login() {
         while (true) {
             view.printGoBackMessage();
             view.printGetMessage("username");
-            String username = Controller.getString();
+            String username = Scanner.getString();
             if ("".equals(username)) return null;
             if (!MainServer.clients.containsKey(username)) {
                 view.printErrorMessage("not found username");
             } else {
                 view.printGetMessage("password");
-                String password = Controller.getString();
+                String password = Scanner.getString();
                 if (MainServer.clients.get(username).user.getPassword().equals(password)) {
                     return MainServer.clients.get(username);
                 } else view.printErrorMessage("password");
@@ -69,12 +69,12 @@ public class Client implements Serializable {
     }
 
     private static void signUp() {
-        Client newClient = getClient();
+        ClientController newClient = getClient();
         if (newClient == null) return;
         MainServer.signUpClient(newClient);
     }
 
-    private static Client getClient() {
+    private static ClientController getClient() {
         String username;
         String password;
         String email;
@@ -84,7 +84,7 @@ public class Client implements Serializable {
         password = receivePassword();
         email = receiveEmail();
         phoneNumber = receivePhoneNumber();
-        return new Client(username, password, email, phoneNumber);
+        return new ClientController(username, password, email, phoneNumber);
     }
 
     private static String receiveUsername() {
@@ -92,7 +92,7 @@ public class Client implements Serializable {
             view.printGoBackMessage();
             view.printGetMessage("username");
             view.printConditionMessage("username");
-            String input = Controller.getString();
+            String input = Scanner.getString();
             if ("".equals(input)) return null;
             else {
                 if (!MainServer.clients.containsKey(input)) {
@@ -113,7 +113,7 @@ public class Client implements Serializable {
         while (true) {
             view.printGetMessage("password");
             view.printConditionMessage("password");
-            String input = Controller.getString();
+            String input = Scanner.getString();
             String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d+]{8,}$";
             if (isMatched(regex, input)) {
                 return input;
@@ -126,7 +126,7 @@ public class Client implements Serializable {
     private static String receiveEmail() {
         while (true) {
             view.printGetMessage("email");
-            String input = Controller.getString();
+            String input = Scanner.getString();
             try {
                 String[] inputs = input.split("@");
                 String[] afterAtSign = inputs[1].split("\\.");
@@ -143,7 +143,7 @@ public class Client implements Serializable {
     private static String receivePhoneNumber() {
         while (true) {
             view.printGetMessage("number");
-            String input = Controller.getString();
+            String input = Scanner.getString();
             if ("".equals(input)) return null;
             String reg = "^[0-9]{11,}$";
             if (isMatched(reg, input)) {
@@ -162,7 +162,7 @@ public class Client implements Serializable {
         outer:
         while (true) {
             view.printLoggedInMenu();
-            switch (Controller.getInt(1, 7)) {
+            switch (Scanner.getInt(1, 7)) {
                 case 1 -> createNewServer();
                 case 4 -> sendFriendRequest();
                 case 5 -> addNewFriends();
@@ -179,13 +179,13 @@ public class Client implements Serializable {
         view.printGetMessage("server name");
         String serverName;
         do {
-            serverName = Controller.getString();
+            serverName = Scanner.getString();
         } while ("".equals(serverName.trim()));
     }
 
     private void sendFriendRequest() {
         view.printGetMessage("friend request");
-        String friendUsername = Controller.getString();
+        String friendUsername = Scanner.getString();
         if (MainServer.clients.containsKey(friendUsername)) {
             MainServer.clients.get(friendUsername).getFriendRequests().add(user.getUsername());
             MainServer.updateClientInfo(MainServer.clients.get(friendUsername));
@@ -201,7 +201,7 @@ public class Client implements Serializable {
                 view.printConditionMessage("add friend");
                 view.printList(friendRequests);
                 try {
-                    String[] acceptedIndexes = Controller.getString().split(" ");
+                    String[] acceptedIndexes = Scanner.getString().split(" ");
                     if (!(acceptedIndexes.length == 1 && acceptedIndexes[0].equals("0"))) {
                         for (String index : acceptedIndexes) {
                             String newFriend = friendRequests.get(Integer.parseInt(index) - 1);
@@ -218,7 +218,7 @@ public class Client implements Serializable {
             if (!rejectSucceed) {
                 view.printGetMessage("reject");
                 try {
-                    String[] rejectedIndexes = Controller.getString().split(" ");
+                    String[] rejectedIndexes = Scanner.getString().split(" ");
                     if (!(rejectedIndexes.length == 1 && rejectedIndexes[0].equals("0"))) {
                         for (String index : rejectedIndexes) {
                             String rejected = friendRequests.get(Integer.parseInt(index) - 1);
@@ -263,10 +263,10 @@ public class Client implements Serializable {
         outer:
         while (true) {
             view.printInitialMenu();
-            int input = Controller.getInt(1, 3);
+            int input = Scanner.getInt(1, 3);
             switch (input) {
                 case 1 -> {
-                    Client loggedInClient = login();
+                    ClientController loggedInClient = login();
                     if (loggedInClient != null) {
                         if (loggedInClient.connect()) loggedInClient.start();
                     } else view.printErrorMessage("login");

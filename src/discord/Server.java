@@ -5,5 +5,5 @@ import java.util.LinkedList;
 public class Server {
 
     private String serverName;
-    private LinkedList<Client> members;
+    private LinkedList<ClientController> members;
 }

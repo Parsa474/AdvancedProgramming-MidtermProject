@@ -1,10 +1,8 @@
 package discord;
 
-import java.util.Scanner;
+public class Scanner {
 
-public class Controller {
-
-    private final static Scanner scanner = new Scanner(System.in);
+    private final static java.util.Scanner scanner = new java.util.Scanner(System.in);
 
     public static String getString() {
         return scanner.nextLine();

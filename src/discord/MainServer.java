@@ -7,16 +7,16 @@ import java.util.HashMap;
 
 public class MainServer {
 
-    public final static HashMap<String, Client> clients = readClients();
+    public final static HashMap<String, ClientController> clients = readClients();
     private final ServerSocket serverSocket;
 
-    private static HashMap<String, Client> readClients() {
-        HashMap<String, Client> clients = new HashMap<>();
+    private static HashMap<String, ClientController> readClients() {
+        HashMap<String, ClientController> clients = new HashMap<>();
         File folder = new File("assets\\users");
         File[] listOfFiles = folder.listFiles();
         if (listOfFiles != null)
             for (File file : listOfFiles) {
-                Client newClient = getClient(file);
+                ClientController newClient = getClient(file);
                 if (newClient != null)
                     clients.put(newClient.getUser().getUsername(), newClient);
                 else System.out.println("null client was read!");
@@ -24,13 +24,13 @@ public class MainServer {
         return clients;
     }
 
-    private static Client getClient(File file) {
+    private static ClientController getClient(File file) {
         FileInputStream fileIn = null;
         ObjectInputStream in = null;
         try {
             fileIn = new FileInputStream(file);
             in = new ObjectInputStream(fileIn);
-            return (Client) in.readObject();
+            return (ClientController) in.readObject();
         } catch (FileNotFoundException e) {
             System.out.println("file not found while iterating over the users!");
         } catch (IOException e) {
@@ -84,17 +84,17 @@ public class MainServer {
         }
     }
 
-    public static void signUpClient(Client newClient) {
+    public static void signUpClient(ClientController newClient) {
         clients.put(newClient.getUser().getUsername(), newClient);
         updateDatabase(newClient);
     }
 
-    public static void updateClientInfo(Client client) {
+    public static void updateClientInfo(ClientController client) {
         MainServer.clients.replace(client.getUser().getUsername(), client);
         updateDatabase(client);
     }
 
-    private static void updateDatabase(Client client) {
+    private static void updateDatabase(ClientController client) {
         FileOutputStream fileOut = null;
         ObjectOutputStream out = null;
         try {
