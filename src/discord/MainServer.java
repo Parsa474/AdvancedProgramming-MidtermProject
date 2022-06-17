@@ -8,7 +8,7 @@ import java.util.HashMap;
 public class MainServer {
 
     public final static HashMap<String, Client> clients = readClients();
-    private ServerSocket serverSocket;
+    private final ServerSocket serverSocket;
 
     private static HashMap<String, Client> readClients() {
         HashMap<String, Client> clients = new HashMap<>();
@@ -44,18 +44,16 @@ public class MainServer {
     }
 
     private static void handleClosingInputs(FileInputStream fileIn, ObjectInputStream in) {
-        if (fileIn != null)
-            try {
-                fileIn.close();
-            } catch (IOException e) {
-                System.out.println("I/O error occurred while closing the stream of fileOut!");
-            }
-        if (in != null)
-            try {
-                in.close();
-            } catch (IOException e) {
-                System.out.println("I/O error occurred while closing the stream of out!");
-            }
+        if (fileIn != null) try {
+            fileIn.close();
+        } catch (IOException e) {
+            System.out.println("I/O error occurred while closing the stream of fileOut!");
+        }
+        if (in != null) try {
+            in.close();
+        } catch (IOException e) {
+            System.out.println("I/O error occurred while closing the stream of out!");
+        }
     }
 
     public MainServer(ServerSocket serverSocket) {
@@ -83,6 +81,46 @@ public class MainServer {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void signUpClient(Client newClient) {
+        clients.put(newClient.getUsername(), newClient);
+        updateDatabase(newClient);
+    }
+
+    public static void updateClientInfo(Client client) {
+        MainServer.clients.replace(client.getUsername(), client);
+        updateDatabase(client);
+    }
+
+    private static void updateDatabase(Client client) {
+        FileOutputStream fileOut = null;
+        ObjectOutputStream out = null;
+        try {
+            String path = "assets\\users";
+            fileOut = new FileOutputStream(path + "\\" + client.getUsername().concat(".bin"));
+            out = new ObjectOutputStream(fileOut);
+            out.writeObject(client);
+        } catch (FileNotFoundException e) {
+            System.out.println("could not find this file!");
+        } catch (IOException e) {
+            System.out.println("I/O error occurred!");
+        } finally {
+            handleClosingOutputs(fileOut, out);
+        }
+    }
+
+    private static void handleClosingOutputs(FileOutputStream fileOut, ObjectOutputStream out) {
+        if (fileOut != null) try {
+            fileOut.close();
+        } catch (IOException e) {
+            System.out.println("I/O error occurred while closing the stream of fileOut!");
+        }
+        if (out != null) try {
+            out.close();
+        } catch (IOException e) {
+            System.out.println("I/O error occurred while closing the stream of out!");
         }
     }
 

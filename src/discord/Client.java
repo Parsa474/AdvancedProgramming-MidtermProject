@@ -3,7 +3,6 @@ package discord;
 import java.io.*;
 import java.net.Socket;
 import java.util.LinkedList;
-import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,16 +15,12 @@ public class Client implements Serializable {
     transient private Socket socket;
     transient private BufferedReader bufferedReader;
     transient private BufferedWriter bufferedWriter;
-    public Status status;
+    private Status status;
     private final LinkedList<String> friendRequests;
     private final LinkedList<String> friends;
 
-    public enum Status {
-        Online,
-        Idle,
-        DoNotDisturb,
-        Invisible,
-        Offline
+    private enum Status {
+        Online, Idle, DoNotDisturb, Invisible, Offline
     }
 
     public Client(String username, String password, String email, String phoneNumber) {
@@ -46,20 +41,20 @@ public class Client implements Serializable {
         return friendRequests;
     }
 
-    private static Client login(Scanner scanner) {
+    private static Client login() {
         while (true) {
-            System.out.println("(press Enter to go back)");
-            System.out.println("enter your username");
-            String username = scanner.nextLine();
+            View.printGoBackMessage();
+            View.printGetMessage("username");
+            String username = Controller.getString();
             if ("".equals(username)) return null;
             if (!MainServer.clients.containsKey(username)) {
-                System.out.println("There is no user saved by this username, sign up first or try again");
+                View.printErrorMessage("not found username");
             } else {
-                System.out.println("enter your password");
-                String password = scanner.nextLine();
+                View.printGetMessage("password");
+                String password = Controller.getString();
                 if (MainServer.clients.get(username).password.equals(password)) {
                     return MainServer.clients.get(username);
-                } else System.out.println("wrong password! try again");
+                } else View.printErrorMessage("password");
             }
         }
     }
@@ -73,104 +68,36 @@ public class Client implements Serializable {
             status = Status.Online;
             return true;
         } catch (IOException e) {
-            System.out.println("could not connect to the main server");
+            View.printErrorMessage("main server");
         }
         return false;
     }
 
-    private static void signUp(Scanner scanner) {
-        Client newClient = getClient(scanner);
+    private static void signUp() {
+        Client newClient = getClient();
         if (newClient == null) return;
-        MainServer.clients.put(newClient.getUsername(), newClient);
-        FileOutputStream fileOut = null;
-        ObjectOutputStream out = null;
-        try {
-            String path = "assets\\users";
-            fileOut = new FileOutputStream(path + "\\" + newClient.username.concat(".bin"));
-            out = new ObjectOutputStream(fileOut);
-            out.writeObject(newClient);
-            System.out.println("The new client has been saved successfully!");
-        } catch (FileNotFoundException e) {
-            System.out.println("could not find this file!");
-        } catch (IOException e) {
-            System.out.println("I/O error occurred!");
-        } finally {
-            handleClosingOutputs(fileOut, out);
-        }
+        MainServer.signUpClient(newClient);
     }
 
-    private void updateClientInfo() {
-        MainServer.clients.replace(username, this);
-        FileOutputStream fileOut = null;
-        ObjectOutputStream out = null;
-        try {
-            String path = "assets\\users";
-            fileOut = new FileOutputStream(path + "\\" + username.concat(".bin"));
-            out = new ObjectOutputStream(fileOut);
-            out.writeObject(this);
-            System.out.println("The new client has been saved successfully!");
-        } catch (FileNotFoundException e) {
-            System.out.println("could not find this file!");
-        } catch (IOException e) {
-            System.out.println("I/O error occurred!");
-        } finally {
-            handleClosingOutputs(fileOut, out);
-        }
-    }
-
-    private void updateClientInfo(Client target) {
-        MainServer.clients.replace(target.username, target);
-        FileOutputStream fileOut = null;
-        ObjectOutputStream out = null;
-        try {
-            String path = "assets\\users";
-            fileOut = new FileOutputStream(path + "\\" + username.concat(".bin"));
-            out = new ObjectOutputStream(fileOut);
-            out.writeObject(target);
-            System.out.println("The new client has been saved successfully!");
-        } catch (FileNotFoundException e) {
-            System.out.println("could not find this file!");
-        } catch (IOException e) {
-            System.out.println("I/O error occurred!");
-        } finally {
-            handleClosingOutputs(fileOut, out);
-        }
-    }
-
-    private static void handleClosingOutputs(FileOutputStream fileOut, ObjectOutputStream out) {
-        if (fileOut != null)
-            try {
-                fileOut.close();
-            } catch (IOException e) {
-                System.out.println("I/O error occurred while closing the stream of fileOut!");
-            }
-        if (out != null)
-            try {
-                out.close();
-            } catch (IOException e) {
-                System.out.println("I/O error occurred while closing the stream of out!");
-            }
-
-    }
-
-    private static Client getClient(Scanner scanner) {
+    private static Client getClient() {
         String username;
         String password;
         String email;
         String phoneNumber;
-        username = getUsername(scanner);
+        username = receiveUsername();
         if (username == null) return null;
-        password = getPassword(scanner);
-        email = getEmail(scanner);
-        phoneNumber = getPhoneNumber(scanner);
+        password = receivePassword();
+        email = receiveEmail();
+        phoneNumber = receivePhoneNumber();
         return new Client(username, password, email, phoneNumber);
     }
 
-    private static String getUsername(Scanner scanner) {
+    private static String receiveUsername() {
         while (true) {
-            System.out.println("(press enter to go back)");
-            System.out.println("enter your username:");
-            String input = scanner.nextLine();
+            View.printGoBackMessage();
+            View.printGetMessage("username");
+            View.printConditionMessage("username");
+            String input = Controller.getString();
             if ("".equals(input)) return null;
             else {
                 if (!MainServer.clients.containsKey(input)) {
@@ -178,56 +105,55 @@ public class Client implements Serializable {
                     if (isMatched(regex, input)) {
                         return input;
                     } else {
-                        System.out.println("invalid format!");
-                        System.out.println("should only consist English letters/numbers and be of a minimum length of 6 characters");
+                        View.printErrorMessage("format");
                     }
                 } else {
-                    System.out.println("already taken username! Please choose another username");
+                    View.printConditionMessage("takenUsername");
                 }
             }
         }
     }
 
-    private static String getPassword(Scanner scanner) {
+    private static String receivePassword() {
         while (true) {
-            System.out.println("enter your password");
-            System.out.println("should consist of at least 1 capital letter, 1 small letter, 1 digit, and at least be of a length of 8");
-            String input = scanner.nextLine();
+            View.printGetMessage("password");
+            View.printConditionMessage("password");
+            String input = Controller.getString();
             String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d+]{8,}$";
             if (isMatched(regex, input)) {
                 return input;
             } else {
-                System.out.println("invalid format!");
+                View.printErrorMessage("format");
             }
         }
     }
 
-    private static String getEmail(Scanner scanner) {
+    private static String receiveEmail() {
         while (true) {
-            System.out.println("enter your email");
-            String input = scanner.nextLine();
+            View.printGetMessage("email");
+            String input = Controller.getString();
             try {
                 String[] inputs = input.split("@");
                 String[] afterAtSign = inputs[1].split("\\.");
                 String reg = "^[A-Za-z0-9]*$";
                 if (isMatched(reg, inputs[0]) && isMatched(reg, afterAtSign[0]) && isMatched(reg, afterAtSign[1])) {
                     return input;
-                } else System.out.println("Do not use illegal characters!");
+                } else View.printErrorMessage("illegalCharacterUse");
             } catch (Exception e) {
-                System.out.println("this email is invalid (should have an '@' and a finish with a .example)");
+                View.printErrorMessage("email");
             }
         }
     }
 
-    private static String getPhoneNumber(Scanner scanner) {
+    private static String receivePhoneNumber() {
         while (true) {
-            System.out.println("enter your phone number (optional, press Enter if you want to skip)");
-            String input = scanner.nextLine();
+            View.printGetMessage("number");
+            String input = Controller.getString();
             if ("".equals(input)) return null;
             String reg = "^[0-9]{11,}$";
             if (isMatched(reg, input)) {
                 return input;
-            } else System.out.println("Do not use illegal characters!");
+            } else View.printErrorMessage("illegalCharacterUse");
         }
     }
 
@@ -237,22 +163,15 @@ public class Client implements Serializable {
         return mt.matches();
     }
 
-    private void start(Scanner scanner) throws IOException {
+    private void start() throws IOException {
         outer:
         while (true) {
-            System.out.println("Welcome! What do you want to do?");
-            System.out.println("1. create new server");
-            System.out.println("2. go to one of my servers");
-            System.out.println("3. change my user info");
-            System.out.println("4. send a friend request");
-            System.out.println("5. check friend request list");
-            System.out.println("6. chat with a friend");
-            System.out.println("7. log out");
-            switch (checkValidity(1, 7, scanner)) {
-                case 1 -> createNewServer(scanner);
-                case 4 -> sendFriendRequest(scanner);
-                case 5 -> addNewFriends(scanner);
-                case 6 -> seeFriendsList(scanner);
+            View.printLoggedInMenu();
+            switch (Controller.getInt(1, 7)) {
+                case 1 -> createNewServer();
+                case 4 -> sendFriendRequest();
+                case 5 -> addNewFriends();
+                case 6 -> View.printList(friends);
                 case 7 -> {
                     socket.close();
                     break outer;
@@ -261,68 +180,66 @@ public class Client implements Serializable {
         }
     }
 
-    private void createNewServer(Scanner scanner) {
-        System.out.println("enter the name of the server you want to create");
+    private void createNewServer() {
+        View.printGetMessage("server name");
         String serverName;
         do {
-            serverName = scanner.nextLine();
+            serverName = Controller.getString();
         } while ("".equals(serverName.trim()));
     }
 
-    private void sendFriendRequest(Scanner scanner) {
-        System.out.println("Enter the username of the friend you want to send a friend request to");
-        String friendUsername = scanner.nextLine();
+    private void sendFriendRequest() {
+        View.printGetMessage("friend request");
+        String friendUsername = Controller.getString();
         if (MainServer.clients.containsKey(friendUsername)) {
             MainServer.clients.get(friendUsername).getFriendRequests().add(username);
-            updateClientInfo(MainServer.clients.get(friendUsername));
-            System.out.println("The friend request was sent successfully");
-        } else System.out.println("A user by this username does not exit!");
+            MainServer.updateClientInfo(MainServer.clients.get(friendUsername));
+            View.printSuccessMessage("friend request");
+        } else View.printErrorMessage("not found username");
     }
 
-    private void addNewFriends(Scanner scanner) {
+    private void addNewFriends() {
+        boolean acceptSucceed = false, rejectSucceed = false;
         while (true) {
-            System.out.println("Enter the number of the friend requests you want to accept, enter 0 to select none");
-            System.out.println("the numbers should be seperated by 1 space, press Enter when finished");
-            for (int i = 0; i < friendRequests.size(); i++) {
-                System.out.printf("%d. %s\n", i + 1, friendRequests.get(i));
-            }
-            try {
-                String[] acceptedIndexes = scanner.nextLine().split(" ");
-                if (!(acceptedIndexes.length == 1 && acceptedIndexes[0].equals("0"))) {
-                    for (String index : acceptedIndexes) {
-                        String newFriend = friendRequests.get(Integer.parseInt(index) - 1);
-                        friends.add(newFriend);
-                        friendRequests.remove(newFriend);
+            if (!acceptSucceed) {
+                View.printGetMessage("accept");
+                View.printConditionMessage("add friend");
+                View.printList(friendRequests);
+                try {
+                    String[] acceptedIndexes = Controller.getString().split(" ");
+                    if (!(acceptedIndexes.length == 1 && acceptedIndexes[0].equals("0"))) {
+                        for (String index : acceptedIndexes) {
+                            String newFriend = friendRequests.get(Integer.parseInt(index) - 1);
+                            friends.add(newFriend);
+                            friendRequests.remove(newFriend);
+                        }
+                        View.printSuccessMessage("accept");
+                        acceptSucceed = true;
                     }
-                    System.out.println("The specified users' requests were accepted");
-                } else System.out.println("no request was accepted");
-            } catch (Exception e) {
-                System.out.println("invalid input, you either entered a non-number character or didn't follow the format");
-                System.out.println("try again!");
-            }
-            System.out.println("follow the same manner for rejecting requests");
-            try {
-                String[] rejectedIndexes = scanner.nextLine().split(" ");
-                if (!(rejectedIndexes.length == 1 && rejectedIndexes[0].equals("0"))) {
-                    for (String index : rejectedIndexes) {
-                        String rejected = friendRequests.get(Integer.parseInt(index) - 1);
-                        friendRequests.remove(rejected);
-                    }
+                } catch (Exception e) {
+                    View.printErrorMessage("list");
                 }
-                System.out.println("The specified users' requests were rejected");
-                MainServer.clients.replace(username, this);
-                updateClientInfo();
-                break;
-            } catch (Exception e) {
-                System.out.println("invalid input, you either entered a non-number character or didn't follow the format");
-                System.out.println("try again!");
             }
-        }
-    }
-
-    private void seeFriendsList(Scanner scanner) {
-        for (String friend : friends) {
-            System.out.println(friend);
+            if (!rejectSucceed) {
+                View.printGetMessage("reject");
+                try {
+                    String[] rejectedIndexes = Controller.getString().split(" ");
+                    if (!(rejectedIndexes.length == 1 && rejectedIndexes[0].equals("0"))) {
+                        for (String index : rejectedIndexes) {
+                            String rejected = friendRequests.get(Integer.parseInt(index) - 1);
+                            friendRequests.remove(rejected);
+                        }
+                    }
+                    View.printSuccessMessage("reject");
+                    rejectSucceed = true;
+                } catch (Exception e) {
+                    View.printErrorMessage("list");
+                }
+            }
+            if (acceptSucceed && rejectSucceed) {
+                MainServer.updateClientInfo(this);
+                break;
+            }
         }
     }
 
@@ -342,42 +259,24 @@ public class Client implements Serializable {
         }
     }
 
-    private static int checkValidity(int firstNum, int lastNum, Scanner scanner) {
-        String input;
-        int intInput;
-        while (true) {
-            input = scanner.nextLine();
-            try {
-                intInput = Integer.parseInt(input);
-                if (intInput < firstNum || intInput > lastNum) System.out.println("invalid input!");
-                else break;
-            } catch (Exception e) {
-                System.out.println("invalid input, Enter a number!");
-            }
-        }
-        return intInput;
-    }
 
     public String toString() {
         return username + " " + password + " " + email + " " + phoneNumber;
     }
 
     public static void main(String[] args) throws IOException {
-        Scanner scanner = new Scanner(System.in);
         outer:
         while (true) {
-            System.out.println("1. login");
-            System.out.println("2. sign up");
-            System.out.println("3. exit");
-            switch (checkValidity(1, 3, scanner)) {
+            View.printInitialMenu();
+            int input = Controller.getInt(1, 3);
+            switch (input) {
                 case 1 -> {
-                    Client loggedInClient = login(scanner);
+                    Client loggedInClient = login();
                     if (loggedInClient != null) {
-                        if (loggedInClient.connect())
-                            loggedInClient.start(scanner);
-                    } else System.out.println("could not login, The main server could be down!");
+                        if (loggedInClient.connect()) loggedInClient.start();
+                    } else View.printErrorMessage("login");
                 }
-                case 2 -> signUp(scanner);
+                case 2 -> signUp();
                 case 3 -> {
                     break outer;
                 }

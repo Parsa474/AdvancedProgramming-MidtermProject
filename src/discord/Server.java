@@ -1,6 +1,9 @@
 package discord;
 
+import java.util.LinkedList;
+
 public class Server {
 
-    String serverName;
+    private String serverName;
+    private LinkedList<Client> members;
 }
