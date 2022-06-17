@@ -2,54 +2,37 @@ package discord;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ClientController implements Serializable {
+public class ClientController {
 
     private final Model user;
-    private static View view;
-    transient private Socket socket;
-    transient private BufferedReader bufferedReader;
-    transient private BufferedWriter bufferedWriter;
-    private Status status;
-    private final LinkedList<String> friendRequests;
-    private final LinkedList<String> friends;
+    private static View printer;
+    private Socket socket;
+    private BufferedReader bufferedReader;
+    private BufferedWriter bufferedWriter;
 
-    private enum Status {
-        Online, Idle, DoNotDisturb, Invisible, Offline
-    }
 
-    public ClientController(String username, String password, String email, String phoneNumber) {
-        user = new Model(username, password, email, phoneNumber);
-        friendRequests = new LinkedList<>();
-        friends = new LinkedList<>();
-        status = Status.Offline;
-    }
-
-    public Model getUser() {
-        return user;
-    }
-
-    public LinkedList<String> getFriendRequests() {
-        return friendRequests;
+    public ClientController(Model user) {
+        this.user = user;
+        printer = new View();
     }
 
     private static ClientController login() {
         while (true) {
-            view.printGoBackMessage();
-            view.printGetMessage("username");
+            printer.printGoBackMessage();
+            printer.printGetMessage("username");
             String username = Scanner.getString();
             if ("".equals(username)) return null;
-            if (!MainServer.clients.containsKey(username)) {
-                view.printErrorMessage("not found username");
+            if (!MainServer.users.containsKey(username)) {
+                printer.printErrorMessage("not found username");
             } else {
-                view.printGetMessage("password");
+                printer.printGetMessage("password");
                 String password = Scanner.getString();
-                if (MainServer.clients.get(username).user.getPassword().equals(password)) {
-                    return MainServer.clients.get(username);
-                } else view.printErrorMessage("password");
+                if (MainServer.users.get(username).getPassword().equals(password)) {
+                    return new ClientController(MainServer.users.get(username));
+                } else printer.printErrorMessage("password");
             }
         }
     }
@@ -60,21 +43,22 @@ public class ClientController implements Serializable {
             socket = clientSocket;
             bufferedReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             bufferedWriter = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-            status = Status.Online;
+            user.setStatus(Model.Status.Online);
             return true;
         } catch (IOException e) {
-            view.printErrorMessage("main server");
+            printer.printErrorMessage("main server");
         }
         return false;
     }
 
     private static void signUp() {
-        ClientController newClient = getClient();
-        if (newClient == null) return;
-        MainServer.signUpClient(newClient);
+        Model newUser = recieveUser();
+        if (newUser == null) return;
+        MainServer.signUpUser(newUser);
+        printer.printSuccessMessage("signUp");
     }
 
-    private static ClientController getClient() {
+    private static Model recieveUser() {
         String username;
         String password;
         String email;
@@ -84,26 +68,26 @@ public class ClientController implements Serializable {
         password = receivePassword();
         email = receiveEmail();
         phoneNumber = receivePhoneNumber();
-        return new ClientController(username, password, email, phoneNumber);
+        return new Model(username, password, email, phoneNumber);
     }
 
     private static String receiveUsername() {
         while (true) {
-            view.printGoBackMessage();
-            view.printGetMessage("username");
-            view.printConditionMessage("username");
+            printer.printGoBackMessage();
+            printer.printGetMessage("username");
+            printer.printConditionMessage("username");
             String input = Scanner.getString();
             if ("".equals(input)) return null;
             else {
-                if (!MainServer.clients.containsKey(input)) {
+                if (!MainServer.users.containsKey(input)) {
                     String regex = "^[A-Za-z0-9]{6,}$";
                     if (isMatched(regex, input)) {
                         return input;
                     } else {
-                        view.printErrorMessage("format");
+                        printer.printErrorMessage("format");
                     }
                 } else {
-                    view.printConditionMessage("takenUsername");
+                    printer.printConditionMessage("taken username");
                 }
             }
         }
@@ -111,21 +95,21 @@ public class ClientController implements Serializable {
 
     private static String receivePassword() {
         while (true) {
-            view.printGetMessage("password");
-            view.printConditionMessage("password");
+            printer.printGetMessage("password");
+            printer.printConditionMessage("password");
             String input = Scanner.getString();
             String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d+]{8,}$";
             if (isMatched(regex, input)) {
                 return input;
             } else {
-                view.printErrorMessage("format");
+                printer.printErrorMessage("format");
             }
         }
     }
 
     private static String receiveEmail() {
         while (true) {
-            view.printGetMessage("email");
+            printer.printGetMessage("email");
             String input = Scanner.getString();
             try {
                 String[] inputs = input.split("@");
@@ -133,22 +117,22 @@ public class ClientController implements Serializable {
                 String reg = "^[A-Za-z0-9]*$";
                 if (isMatched(reg, inputs[0]) && isMatched(reg, afterAtSign[0]) && isMatched(reg, afterAtSign[1])) {
                     return input;
-                } else view.printErrorMessage("illegalCharacterUse");
+                } else printer.printErrorMessage("illegal character use");
             } catch (Exception e) {
-                view.printErrorMessage("email");
+                printer.printErrorMessage("email");
             }
         }
     }
 
     private static String receivePhoneNumber() {
         while (true) {
-            view.printGetMessage("number");
+            printer.printGetMessage("phone number");
             String input = Scanner.getString();
             if ("".equals(input)) return null;
             String reg = "^[0-9]{11,}$";
             if (isMatched(reg, input)) {
                 return input;
-            } else view.printErrorMessage("illegalCharacterUse");
+            } else printer.printErrorMessage("illegal character use");
         }
     }
 
@@ -161,12 +145,12 @@ public class ClientController implements Serializable {
     private void start() throws IOException {
         outer:
         while (true) {
-            view.printLoggedInMenu();
+            printer.printLoggedInMenu();
             switch (Scanner.getInt(1, 7)) {
                 case 1 -> createNewServer();
                 case 4 -> sendFriendRequest();
                 case 5 -> addNewFriends();
-                case 6 -> view.printList(friends);
+                case 6 -> printer.printList(user.getFriends());
                 case 7 -> {
                     socket.close();
                     break outer;
@@ -176,7 +160,7 @@ public class ClientController implements Serializable {
     }
 
     private void createNewServer() {
-        view.printGetMessage("server name");
+        printer.printGetMessage("server name");
         String serverName;
         do {
             serverName = Scanner.getString();
@@ -184,55 +168,61 @@ public class ClientController implements Serializable {
     }
 
     private void sendFriendRequest() {
-        view.printGetMessage("friend request");
+        printer.printGetMessage("send");
         String friendUsername = Scanner.getString();
-        if (MainServer.clients.containsKey(friendUsername)) {
-            MainServer.clients.get(friendUsername).getFriendRequests().add(user.getUsername());
-            MainServer.updateClientInfo(MainServer.clients.get(friendUsername));
-            view.printSuccessMessage("friend request");
-        } else view.printErrorMessage("not found username");
+        if (user.getFriends().contains(friendUsername)) {
+            printer.printErrorMessage("already friend");
+            return;
+        }
+        if (MainServer.users.containsKey(friendUsername)) {
+            MainServer.users.get(friendUsername).getFriendRequests().add(user.getUsername());
+            MainServer.updateUserInfo(MainServer.users.get(friendUsername));
+            printer.printSuccessMessage("friend request");
+        } else printer.printErrorMessage("not found username");
     }
 
     private void addNewFriends() {
         boolean acceptSucceed = false, rejectSucceed = false;
         while (true) {
             if (!acceptSucceed) {
-                view.printGetMessage("accept");
-                view.printConditionMessage("add friend");
-                view.printList(friendRequests);
+                printer.printGetMessage("add friend");
+                printer.printConditionMessage("add friend");
+                printer.printList(user.getFriendRequests());
                 try {
                     String[] acceptedIndexes = Scanner.getString().split(" ");
                     if (!(acceptedIndexes.length == 1 && acceptedIndexes[0].equals("0"))) {
                         for (String index : acceptedIndexes) {
-                            String newFriend = friendRequests.get(Integer.parseInt(index) - 1);
-                            friends.add(newFriend);
-                            friendRequests.remove(newFriend);
+                            String newFriend = user.getFriendRequests().get(Integer.parseInt(index) - 1);
+                            user.getFriends().add(newFriend);
+                            MainServer.users.get(newFriend).getFriends().add(user.getUsername());
+                            MainServer.updateUserInfo(MainServer.users.get(newFriend));
+                            user.getFriendRequests().remove(newFriend);
                         }
-                        view.printSuccessMessage("accept");
+                        printer.printSuccessMessage("accept");
                         acceptSucceed = true;
                     }
                 } catch (Exception e) {
-                    view.printErrorMessage("list");
+                    printer.printErrorMessage("list");
                 }
             }
             if (!rejectSucceed) {
-                view.printGetMessage("reject");
+                printer.printGetMessage("reject request");
                 try {
                     String[] rejectedIndexes = Scanner.getString().split(" ");
                     if (!(rejectedIndexes.length == 1 && rejectedIndexes[0].equals("0"))) {
                         for (String index : rejectedIndexes) {
-                            String rejected = friendRequests.get(Integer.parseInt(index) - 1);
-                            friendRequests.remove(rejected);
+                            String rejected = user.getFriendRequests().get(Integer.parseInt(index) - 1);
+                            user.getFriendRequests().remove(rejected);
                         }
                     }
-                    view.printSuccessMessage("reject");
+                    printer.printSuccessMessage("reject");
                     rejectSucceed = true;
                 } catch (Exception e) {
-                    view.printErrorMessage("list");
+                    printer.printErrorMessage("list");
                 }
             }
             if (acceptSucceed && rejectSucceed) {
-                MainServer.updateClientInfo(this);
+                MainServer.updateUserInfo(user);
                 break;
             }
         }
@@ -260,16 +250,17 @@ public class ClientController implements Serializable {
     }
 
     public static void main(String[] args) throws IOException {
+        printer = new View();
         outer:
         while (true) {
-            view.printInitialMenu();
+            printer.printInitialMenu();
             int input = Scanner.getInt(1, 3);
             switch (input) {
                 case 1 -> {
                     ClientController loggedInClient = login();
                     if (loggedInClient != null) {
                         if (loggedInClient.connect()) loggedInClient.start();
-                    } else view.printErrorMessage("login");
+                    }
                 }
                 case 2 -> signUp();
                 case 3 -> {

@@ -12,9 +12,8 @@ public class View {
 
     public void printErrorMessage(String error) {
         switch (error) {
-            case "login" -> System.out.println("Could not login, The main server could be down!");
             case "format" -> System.out.println("Invalid format!");
-            case "illegalCharacterUse" -> System.out.println("Do not use illegal characters!");
+            case "illegal character use" -> System.out.println("Do not use illegal characters!");
             case "email" ->
                     System.out.println("this email is invalid (should have an '@' and a finish with a .example)");
             case "file not found" -> System.out.println("file not found!");
@@ -26,6 +25,7 @@ public class View {
                 System.out.println("try again!");
             }
             case "main server" -> System.out.println("could not connect to the main server");
+            case "already friend" -> System.out.println("This user is already your friend!");
         }
     }
 
@@ -35,13 +35,13 @@ public class View {
 
     public void printGetMessage(String field) {
         switch (field) {
-            case "accept" -> System.out.println("Enter the username of the user you want to send a friend request to");
-            case "reject" -> System.out.println("follow the same manner for rejecting requests");
+            case "send" -> System.out.println("Enter the username of the user you want to send a friend request to");
             case "add friend" ->
-                    System.out.println("Enter the number of the friend requests you want to accept, enter 0 to select none");
+                    System.out.println("Enter the numbers of the friend requests you want to accept, enter 0 to select none");
+            case "reject request" -> System.out.println("follow the same manner for rejecting requests");
             default -> {
                 System.out.println("enter your " + field);
-                if (field.equals("phone")) System.out.println("(optional, press Enter if you want to skip)");
+                if (field.equals("phone number")) System.out.println("(optional, press Enter if you want to skip)");
             }
         }
     }
@@ -50,7 +50,7 @@ public class View {
         switch (field) {
             case "username" ->
                     System.out.println("should only consist English letters/numbers and be of a minimum length of 6 characters");
-            case "takenUsername" -> System.out.println("already taken username! Please choose another username");
+            case "taken username" -> System.out.println("already taken username! Please choose another username");
             case "password" ->
                     System.out.println("should consist of at least 1 capital letter, 1 small letter, 1 digit, and at least be of a length of 8");
             case "add friend" ->

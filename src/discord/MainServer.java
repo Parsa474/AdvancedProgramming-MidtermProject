@@ -7,30 +7,30 @@ import java.util.HashMap;
 
 public class MainServer {
 
-    public final static HashMap<String, ClientController> clients = readClients();
+    public final static HashMap<String, Model> users = readUsers();
     private final ServerSocket serverSocket;
 
-    private static HashMap<String, ClientController> readClients() {
-        HashMap<String, ClientController> clients = new HashMap<>();
+    private static HashMap<String, Model> readUsers() {
+        HashMap<String, Model> clients = new HashMap<>();
         File folder = new File("assets\\users");
         File[] listOfFiles = folder.listFiles();
         if (listOfFiles != null)
             for (File file : listOfFiles) {
-                ClientController newClient = getClient(file);
-                if (newClient != null)
-                    clients.put(newClient.getUser().getUsername(), newClient);
-                else System.out.println("null client was read!");
+                Model newUser = readUser(file);
+                if (newUser != null)
+                    clients.put(newUser.getUsername(), newUser);
+                else System.out.println("null user was read!");
             }
         return clients;
     }
 
-    private static ClientController getClient(File file) {
+    private static Model readUser(File file) {
         FileInputStream fileIn = null;
         ObjectInputStream in = null;
         try {
             fileIn = new FileInputStream(file);
             in = new ObjectInputStream(fileIn);
-            return (ClientController) in.readObject();
+            return (Model) in.readObject();
         } catch (FileNotFoundException e) {
             System.out.println("file not found while iterating over the users!");
         } catch (IOException e) {
@@ -84,26 +84,26 @@ public class MainServer {
         }
     }
 
-    public static void signUpClient(ClientController newClient) {
-        clients.put(newClient.getUser().getUsername(), newClient);
-        updateDatabase(newClient);
+    public static void signUpUser(Model newUser) {
+        users.put(newUser.getUsername(), newUser);
+        updateDatabase(newUser);
     }
 
-    public static void updateClientInfo(ClientController client) {
-        MainServer.clients.replace(client.getUser().getUsername(), client);
-        updateDatabase(client);
+    public static void updateUserInfo(Model user) {
+        MainServer.users.replace(user.getUsername(), user);
+        updateDatabase(user);
     }
 
-    private static void updateDatabase(ClientController client) {
+    private static void updateDatabase(Model user) {
         FileOutputStream fileOut = null;
         ObjectOutputStream out = null;
         try {
             String path = "assets\\users";
-            fileOut = new FileOutputStream(path + "\\" + client.getUser().getUsername().concat(".bin"));
+            fileOut = new FileOutputStream(path + "\\" + user.getUsername().concat(".bin"));
             out = new ObjectOutputStream(fileOut);
-            out.writeObject(client);
+            out.writeObject(user);
         } catch (FileNotFoundException e) {
-            System.out.println("could not find this file!");
+            System.out.println("Could not find this file!");
         } catch (IOException e) {
             System.out.println("I/O error occurred!");
         } finally {
