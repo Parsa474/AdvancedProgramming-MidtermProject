@@ -4,13 +4,13 @@ import java.util.LinkedList;
 
 public class View {
 
-    public static void printInitialMenu() {
+    public void printInitialMenu() {
         System.out.println("1. login");
         System.out.println("2. sign up");
         System.out.println("3. exit");
     }
 
-    public static void printErrorMessage(String error) {
+    public void printErrorMessage(String error) {
         switch (error) {
             case "login" -> System.out.println("Could not login, The main server could be down!");
             case "format" -> System.out.println("Invalid format!");
@@ -29,11 +29,11 @@ public class View {
         }
     }
 
-    public static void printGoBackMessage() {
+    public void printGoBackMessage() {
         System.out.println("(press enter to go back)");
     }
 
-    public static void printGetMessage(String field) {
+    public void printGetMessage(String field) {
         switch (field) {
             case "accept" -> System.out.println("Enter the username of the user you want to send a friend request to");
             case "reject" -> System.out.println("follow the same manner for rejecting requests");
@@ -46,7 +46,7 @@ public class View {
         }
     }
 
-    public static void printConditionMessage(String field) {
+    public void printConditionMessage(String field) {
         switch (field) {
             case "username" ->
                     System.out.println("should only consist English letters/numbers and be of a minimum length of 6 characters");
@@ -58,7 +58,7 @@ public class View {
         }
     }
 
-    public static void printSuccessMessage(String field) {
+    public void printSuccessMessage(String field) {
         switch (field) {
             case "signUp" -> System.out.println("Signed up successfully!");
             case "friend request" -> System.out.println("The request was sent successfully");
@@ -67,7 +67,7 @@ public class View {
         }
     }
 
-    public static void printLoggedInMenu() {
+    public void printLoggedInMenu() {
         System.out.println("Welcome! What do you want to do?");
         System.out.println("1. create new server");
         System.out.println("2. go to one of my servers");
@@ -78,7 +78,7 @@ public class View {
         System.out.println("7. log out");
     }
 
-    public static void printList(LinkedList<String> list) {
+    public void printList(LinkedList<String> list) {
         for (int i = 0; i < list.size(); i++) {
             System.out.printf("%d. %s\n", i + 1, list.get(i));
         }

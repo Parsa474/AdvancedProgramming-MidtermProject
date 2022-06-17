@@ -18,7 +18,7 @@ public class MainServer {
             for (File file : listOfFiles) {
                 Client newClient = getClient(file);
                 if (newClient != null)
-                    clients.put(newClient.getUsername(), newClient);
+                    clients.put(newClient.getUser().getUsername(), newClient);
                 else System.out.println("null client was read!");
             }
         return clients;
@@ -85,12 +85,12 @@ public class MainServer {
     }
 
     public static void signUpClient(Client newClient) {
-        clients.put(newClient.getUsername(), newClient);
+        clients.put(newClient.getUser().getUsername(), newClient);
         updateDatabase(newClient);
     }
 
     public static void updateClientInfo(Client client) {
-        MainServer.clients.replace(client.getUsername(), client);
+        MainServer.clients.replace(client.getUser().getUsername(), client);
         updateDatabase(client);
     }
 
@@ -99,7 +99,7 @@ public class MainServer {
         ObjectOutputStream out = null;
         try {
             String path = "assets\\users";
-            fileOut = new FileOutputStream(path + "\\" + client.getUsername().concat(".bin"));
+            fileOut = new FileOutputStream(path + "\\" + client.getUser().getUsername().concat(".bin"));
             out = new ObjectOutputStream(fileOut);
             out.writeObject(client);
         } catch (FileNotFoundException e) {
