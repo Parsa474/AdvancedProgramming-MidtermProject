@@ -16,6 +16,7 @@ public class View {
                     System.out.println("this email is invalid (should have an '@' and a finish with a .example)");
             case "file not found" -> System.out.println("file not found!");
             case "IO" -> System.out.println("I/O error occurred!");
+            case "ClassNotFoundException" -> System.out.println("ClassNotFoundException error occurred!");
             case "not found username" -> System.out.println("A user by this username was not found!");
             case "password" -> System.out.println("wrong password! try again");
             case "list" -> {
@@ -80,5 +81,9 @@ public class View {
         for (int i = 0; i < list.size(); i++) {
             System.out.printf("%d. %s\n", i + 1, list.get(i));
         }
+    }
+
+    public void println(String msg) {
+        System.out.println(msg);
     }
 }

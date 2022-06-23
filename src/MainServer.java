@@ -1,7 +1,10 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainServer {
 
@@ -59,13 +62,17 @@ public class MainServer {
     }
 
     public void startServer() {
+        System.out.println("Started");
         try {
+            System.out.println("Server Created.\nShould wait for a client ... ");
+            ExecutorService executorService = Executors.newCachedThreadPool();
+            ArrayList<MySocket> connectionSockets = new ArrayList<MySocket>();
             while (!serverSocket.isClosed()) {
-                Socket socket = serverSocket.accept();
-                System.out.println("A new client has connected");
-                new Thread(() -> {
-
-                }).start();
+                MySocket newConnectionSocket = new MySocket(serverSocket.accept());
+                System.out.println("client accepted!");
+                connectionSockets.add(newConnectionSocket);
+                executorService.execute(new privateChatClientHandler(newConnectionSocket, connectionSockets, users));
+                System.out.println("client numbers: " + connectionSockets.size());
             }
         } catch (IOException e) {
             closeServerSocket();

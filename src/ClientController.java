@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -7,9 +8,12 @@ public class ClientController {
 
     private final Model user;
     private static View printer;
-    private Socket socket;
+    private Socket currentSocket;
+    private ObjectInputStream objectInputStream;
+    private ObjectOutputStream objectOutputStream;
     private BufferedReader bufferedReader;
     private BufferedWriter bufferedWriter;
+    private boolean listen;
 
 
     public ClientController(Model user) {
@@ -37,10 +41,16 @@ public class ClientController {
 
     private boolean connect() {
         try {
-            Socket clientSocket = new Socket("127.0.0.1", 6000);
-            socket = clientSocket;
-            bufferedReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            bufferedWriter = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+            user.setSocket(new Socket("127.0.0.1", 6000));
+            System.out.println("done1");
+            currentSocket = user.getSocket();
+            System.out.println("done2");
+//            objectInputStream = new ObjectInputStream(currentSocket.getInputStream());
+//            System.out.println("done3");
+//            objectOutputStream = new ObjectOutputStream(currentSocket.getOutputStream());
+            System.out.println("done4");
+            bufferedReader = new BufferedReader(new InputStreamReader(currentSocket.getInputStream()));
+            bufferedWriter = new BufferedWriter(new OutputStreamWriter(currentSocket.getOutputStream()));
             user.setStatus(Model.Status.Online);
             return true;
         } catch (IOException e) {
@@ -148,9 +158,9 @@ public class ClientController {
                 case 1 -> createNewServer();
                 case 4 -> sendFriendRequest();
                 case 5 -> addNewFriends();
-                case 6 -> printer.printList(user.getFriends());
+                case 6 -> chatWithFriends();
                 case 7 -> {
-                    socket.close();
+                    currentSocket.close(); // it will also close user's socket because they're references to a single object
                     break outer;
                 }
             }
@@ -195,6 +205,10 @@ public class ClientController {
                             MainServer.users.get(newFriend).getFriends().add(user.getUsername());
                             MainServer.updateUserInfo(MainServer.users.get(newFriend));
                             user.getFriendRequests().remove(newFriend);
+
+                            // creating privateChat list of messages
+                            user.getPrivateChatMessages().put(newFriend, new ArrayList<Message>());
+                            MainServer.users.get(newFriend).getPrivateChatMessages().put(user.getUsername(), new ArrayList<Message>());
                         }
                         printer.printSuccessMessage("accept");
                         acceptSucceed = true;
@@ -226,6 +240,76 @@ public class ClientController {
         }
     }
 
+    private Thread listenToMessages(ArrayList<Message> messages) {
+        return new Thread() {
+            @Override
+            public void run() {
+                super.run();
+                try {
+                    objectInputStream = new ObjectInputStream(currentSocket.getInputStream());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                while (listen && currentSocket.isConnected()) {
+                    try {
+                        String receivedMessage = (String) objectInputStream.readObject();
+                        printer.println(receivedMessage);
+                        messages.add(new Message(receivedMessage, new String[]{user.getUsername()}));
+                    } catch (IOException e) {
+                        printer.printErrorMessage("IO");
+                    } catch (ClassNotFoundException e) {
+                        printer.printErrorMessage("ClassNotFoundException");
+                    }
+                }
+            }
+        };
+    }
+
+    private void chatWithFriends() {
+        printer.printList(user.getFriends());
+        int chatNum = Scanner.getInt(1, user.getFriends().size());
+        String friendName = user.getFriends().get(--chatNum);
+        ArrayList<Message> messages = user.getPrivateChatMessages().get(friendName);
+
+        printer.printGoBackMessage();
+        // printing previous messages
+        for (Message msg : messages) {
+            printer.println(msg.getMessage());
+        }
+
+        listen = true;
+        Thread listeningThread = listenToMessages(messages);
+        listeningThread.start();
+
+        try {
+            objectOutputStream = new ObjectOutputStream(currentSocket.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String newMessage = "";
+        while (true) {
+            newMessage = Scanner.getString();
+            if (newMessage.equals("\n")) {
+                listen = false;
+//                listeningThread.stop();
+                break;
+            }
+
+            Message newMessageObject = new Message(newMessage, new String[]{friendName});
+
+            // adding message to the ArrayList
+            messages.add(newMessageObject);
+
+            // sending message
+            try {
+                objectOutputStream.writeObject(newMessage);
+            } catch (IOException e) {
+                printer.printErrorMessage("IO");
+            }
+        }
+    }
+
     public void closeEverything() {
         try {
             if (bufferedReader != null) {
@@ -234,8 +318,8 @@ public class ClientController {
             if (bufferedWriter != null) {
                 bufferedWriter.close();
             }
-            if (socket != null) {
-                socket.close();
+            if (currentSocket != null) {
+                currentSocket.close();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -257,7 +341,10 @@ public class ClientController {
                 case 1 -> {
                     ClientController loggedInClient = login();
                     if (loggedInClient != null) {
-                        if (loggedInClient.connect()) loggedInClient.start();
+                        if (loggedInClient.connect()) {
+                            System.out.println("connected");
+                            loggedInClient.start();
+                        }
                     }
                 }
                 case 2 -> signUp();
