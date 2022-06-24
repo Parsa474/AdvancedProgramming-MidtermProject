@@ -1,10 +1,10 @@
 package discord;
 
-public class Scanner {
+public class MyScanner {
 
     private final static java.util.Scanner scanner = new java.util.Scanner(System.in);
 
-    public static String getString() {
+    public static String getLine() {
         return scanner.nextLine();
     }
 

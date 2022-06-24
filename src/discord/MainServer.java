@@ -7,7 +7,7 @@ import java.util.HashMap;
 
 public class MainServer {
 
-    public final static HashMap<String, Model> users = readUsers();
+    public static HashMap<String, Model> users = readUsers();
     private final ServerSocket serverSocket;
 
     private static HashMap<String, Model> readUsers() {
@@ -43,6 +43,10 @@ public class MainServer {
         return null;
     }
 
+    public static void updateUsers() {
+        users = readUsers();
+    }
+
     private static void handleClosingInputs(FileInputStream fileIn, ObjectInputStream in) {
         if (fileIn != null) try {
             fileIn.close();
@@ -65,9 +69,7 @@ public class MainServer {
             while (!serverSocket.isClosed()) {
                 Socket socket = serverSocket.accept();
                 System.out.println("A new client has connected");
-                new Thread(() -> {
-
-                }).start();
+                new Thread(new ClientHandler(socket)).start();
             }
         } catch (IOException e) {
             closeServerSocket();
@@ -89,12 +91,12 @@ public class MainServer {
         updateDatabase(newUser);
     }
 
-    public static void updateUserInfo(Model user) {
+    /*public static void updateUserInfo(Model user) {
         MainServer.users.replace(user.getUsername(), user);
         updateDatabase(user);
-    }
+    }*/
 
-    private static void updateDatabase(Model user) {
+    public static void updateDatabase(Model user) {
         FileOutputStream fileOut = null;
         ObjectOutputStream out = null;
         try {
