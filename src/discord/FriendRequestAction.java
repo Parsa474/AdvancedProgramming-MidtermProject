@@ -16,6 +16,9 @@ public class FriendRequestAction extends Action {
             return false;
         } else {
             Model user = MainServer.users.get(username);
+            if (user.getFriendRequests().contains(requester)) {
+                return false;
+            }
             user.getFriendRequests().add(requester);
             MainServer.updateDatabase(user);
             return true;

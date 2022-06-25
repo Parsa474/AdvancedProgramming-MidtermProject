@@ -2,6 +2,7 @@ package discord;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,7 +34,8 @@ public class ClientController {
             int command = MyScanner.getInt(1, 4);
             switch (command) {
                 case 1 -> sendFriendRequest();
-                case 2 -> printer.printList(user.getFriendRequests());
+                case 2 -> sendRequestsIndexes();
+                case 3 -> printer.printList(user.getFriends());
                 case 4 -> {
                     mySocket.write(null);
                     break outer;
@@ -66,7 +68,7 @@ public class ClientController {
                     printer.printSuccessMessage("friend request");
                     break;
                 } else {
-                    printer.printErrorMessage("not found username");
+                    printer.printErrorMessage("friend request");
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -74,54 +76,65 @@ public class ClientController {
         }
     }
 
-    private void sendListInput() {
+    private void sendRequestsIndexes() throws IOException {
         boolean acceptSucceed = false, rejectSucceed = false;
+        ArrayList<Integer> acceptedIndexes = new ArrayList<>();
+        ArrayList<Integer> rejectedIndexes = new ArrayList<>();
+        int count = user.getFriends().size();
         do {
+            printer.printGetMessage("friend request list");
+            printer.printConditionMessage("friend request list");
+            printer.printList(user.getFriendRequests());
             if (!acceptSucceed) {
-                printer.printGetMessage("friend request list");
-                printer.printConditionMessage("friend request list");
-                printer.printList(user.getFriendRequests());
                 try {
                     String input = MyScanner.getLine();
-                    String[] acceptedIndexes = input.split(" ");
-                    if (acceptedIndexes.length < 1) throw new Exception();
-                    if (checkListInputFormat(acceptedIndexes)) throw new Exception();
-                    //objectOutputStream.writeObject(new Message(input));
-                    mySocket.write(input);
-                    printer.printSuccessMessage("accept");
-                    acceptSucceed = true;
+                    String[] accepted = input.split(" ");
+                    for (String index : accepted) {
+                        acceptedIndexes.add(Integer.parseInt(index));
+                    }
+                    if (acceptedIndexes.size() == 1 && acceptedIndexes.get(0) == 0) {
+                        acceptSucceed = true;
+                    } else {
+                        if (checkListInputFormat(acceptedIndexes, count)) {
+                            printer.printSuccessMessage("accept");
+                            acceptSucceed = true;
+                        } else {
+                            printer.printErrorMessage("index");
+                        }
+                    }
                 } catch (Exception e) {
                     printer.printErrorMessage("list");
                 }
             }
-
             if (!rejectSucceed) {
                 try {
                     String input = MyScanner.getLine();
-                    String[] rejectedIndexes = input.split(" ");
-                    if (rejectedIndexes.length < 1) throw new Exception();
-                    if (checkListInputFormat(rejectedIndexes)) throw new Exception();
-                    //objectOutputStream.writeObject(new Message(input));
-                    mySocket.write(input);
-                    printer.printSuccessMessage("reject");
-                    rejectSucceed = true;
+                    String[] rejected = input.split(" ");
+                    for (String index : rejected) {
+                        rejectedIndexes.add(Integer.parseInt(index));
+                    }
+                    if (rejectedIndexes.size() == 1 && rejectedIndexes.get(0) == 0) {
+                        rejectSucceed = true;
+                    } else {
+                        if (checkListInputFormat(rejectedIndexes, count)) {
+                            printer.printSuccessMessage("reject");
+                            rejectSucceed = true;
+                        } else {
+                            printer.printErrorMessage("index");
+                        }
+                    }
                 } catch (Exception e) {
                     printer.printErrorMessage("list");
                 }
             }
         } while (!acceptSucceed || !rejectSucceed);
+        mySocket.write(new CheckFriendRequestsAction(user, acceptedIndexes, rejectedIndexes));
     }
 
-    private boolean checkListInputFormat(String[] array) {
-        int test;
+    private boolean checkListInputFormat(ArrayList<Integer> indexes, int max) {
         boolean output = true;
-        try {
-            for (String number : array) {
-                test = Integer.parseInt(number);
-                output = output && (test > 0 && test < array.length);
-            }
-        } catch (Exception e) {
-            return true;
+        for (Integer index : indexes) {
+            output = output && (index > 0 && index < max);
         }
         return output;
     }

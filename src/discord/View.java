@@ -27,6 +27,8 @@ public class View {
             case "main server" -> System.out.println("could not connect to the main server");
             case "already friend" -> System.out.println("This user is already your friend!");
             case "yourself" -> System.out.println("You can't send a friend request to yourself!");
+            case "friend request" -> System.out.println("invalid username or friend request already sent!");
+            case "index" -> System.out.println("Index 0 or more than the number of friends used!");
             default -> System.out.println(error);
         }
     }

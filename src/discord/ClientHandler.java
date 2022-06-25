@@ -42,54 +42,22 @@ public class ClientHandler implements Runnable {
         }
     }
 
-
-    private void sendFriendRequest() throws IOException, ClassNotFoundException {
-        String friendUsername = mySocket.readString();
-        MainServer.users.get(friendUsername).getFriendRequests().add(user.getUsername());
-        MainServer.updateDatabase(MainServer.users.get(friendUsername));
-    }
-
-    private void addNewFriends() throws ClassNotFoundException {
-        try {
-            String[] acceptedIndexes = mySocket.readString().split(" ");
-            if (!(acceptedIndexes.length == 1 && acceptedIndexes[0].equals("0"))) {
-                for (String index : acceptedIndexes) {
-                    String newFriend = user.getFriendRequests().get(Integer.parseInt(index) - 1);
-                    user.getFriends().add(newFriend);
-                    MainServer.users.get(newFriend).getFriends().add(user.getUsername());
-                    MainServer.updateDatabase(MainServer.users.get(newFriend));
-                    user.getFriendRequests().remove(newFriend);
-                }
-            }
-            String[] rejectedIndexes = mySocket.readString().split(" ");
-            if (!(rejectedIndexes.length == 1 && rejectedIndexes[0].equals("0"))) {
-                for (String index : rejectedIndexes) {
-                    String rejected = user.getFriendRequests().get(Integer.parseInt(index) - 1);
-                    user.getFriendRequests().remove(rejected);
-                }
-            }
-            MainServer.updateDatabase(user);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void removeThisAndCloseEverything() {
+    /*public void removeThisAndCloseEverything() {
         clientHandlers.remove(this);
         broadcastMessage("SERVER: " + user.getUsername() + " has left the chat!");
         mySocket.closeEverything();
     }
 
     public void broadcastMessage(String messageToSend) {
-        //for (ClientHandler clientHandler : clientHandlers) {
+        for (ClientHandler clientHandler : clientHandlers) {
         try {
-            //if (!clientHandler.clientUsername.equals(clientUsername)) {
-            //objectOutputStream.writeObject(new Message(messageToSend));
+            if (!clientHandler.clientUsername.equals(clientUsername)) {
+            objectOutputStream.writeObject(new Message(messageToSend));
             mySocket.write(messageToSend);
-            //}
+            }
         } catch (IOException e) {
             removeThisAndCloseEverything();
         }
-        //}
-    }
+        }
+    }*/
 }
