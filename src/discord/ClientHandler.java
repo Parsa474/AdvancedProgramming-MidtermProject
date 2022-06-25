@@ -27,8 +27,10 @@ public class ClientHandler implements Runnable {
                 }
                 while (mySocket.getConnectionSocket().isConnected()) {
                     action = mySocket.readAction();
+                    // for logging out
                     if (action == null) {
-                        mySocket.write(null);
+                        user = null;
+                        break;
                     } else {
                         mySocket.write(action.act());
                     }

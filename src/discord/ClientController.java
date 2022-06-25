@@ -26,7 +26,7 @@ public class ClientController {
         return user.toString();
     }
 
-    private void start() {
+    private void start() throws IOException {
         outer:
         while (true) {
             printer.printLoggedInMenu();
@@ -35,6 +35,7 @@ public class ClientController {
                 case 1 -> sendFriendRequest();
                 case 2 -> printer.printList(user.getFriendRequests());
                 case 4 -> {
+                    mySocket.write(null);
                     break outer;
                 }
             }
@@ -155,8 +156,7 @@ public class ClientController {
             if (user != null) {
                 this.user = user;
                 break;
-            }
-            else printer.printErrorMessage("login");
+            } else printer.printErrorMessage("login");
         }
         printer.printSuccessMessage("login");
         return true;
@@ -253,8 +253,8 @@ public class ClientController {
     }
 
     public static void main(String[] args) {
-        ClientController clientController;
         try {
+            ClientController clientController;
             Socket clientControllerSocket = new Socket("127.0.0.1", 6000);
             clientController = new ClientController(null, clientControllerSocket);
             outer:
