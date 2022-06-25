@@ -3,13 +3,20 @@ package discord;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainServer {
 
-    public static HashMap<String, Model> users = readUsers();
+    public static HashMap<String, Model> users = new HashMap<>();
+    //public static Map<String, Model> users = Collections.synchronizedMap(new HashMap<>());
     private final ServerSocket serverSocket;
 
+    public MainServer(ServerSocket serverSocket) {
+        this.serverSocket = serverSocket;
+        users = readUsers();
+    }
     private static HashMap<String, Model> readUsers() {
         HashMap<String, Model> clients = new HashMap<>();
         File folder = new File("assets\\users");
@@ -60,16 +67,14 @@ public class MainServer {
         }
     }
 
-    public MainServer(ServerSocket serverSocket) {
-        this.serverSocket = serverSocket;
-    }
-
     public void startServer() {
         try {
+            ExecutorService executorService = Executors.newCachedThreadPool();
             while (!serverSocket.isClosed()) {
                 Socket socket = serverSocket.accept();
                 System.out.println("A new client has connected");
-                new Thread(new ClientHandler(socket)).start();
+                ClientHandler clientHandler = new ClientHandler(socket);
+                executorService.execute(clientHandler);
             }
         } catch (IOException e) {
             closeServerSocket();
@@ -91,10 +96,10 @@ public class MainServer {
         updateDatabase(newUser);
     }
 
-    /*public static void updateUserInfo(Model user) {
+    public static void updateUserInfo(Model user) {
         MainServer.users.replace(user.getUsername(), user);
         updateDatabase(user);
-    }*/
+    }
 
     public static void updateDatabase(Model user) {
         FileOutputStream fileOut = null;
@@ -127,6 +132,8 @@ public class MainServer {
     }
 
     public static void main(String[] args) throws IOException {
-        new MainServer(new ServerSocket(6000)).startServer();
+        ServerSocket serverSocket = new ServerSocket(6000);
+        MainServer mainServer = new MainServer(serverSocket);
+        mainServer.startServer();
     }
 }

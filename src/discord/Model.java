@@ -12,7 +12,6 @@ public class Model implements Serializable {
     private final LinkedList<String> friendRequests;
     private final LinkedList<String> friends;
     private Status status;
-    private int stage;
 
     public Model(String username, String password, String email, String phoneNumber) {
         this.username = username;
@@ -22,7 +21,6 @@ public class Model implements Serializable {
         friendRequests = new LinkedList<>();
         friends = new LinkedList<>();
         status = Status.Offline;
-        stage = 0;
     }
 
     public enum Status {
@@ -79,13 +77,5 @@ public class Model implements Serializable {
 
     public String toString() {
         return username + " " + password + " " + email + " " + phoneNumber;
-    }
-
-    public int getStage() {
-        return stage;
-    }
-
-    public void setStage(int stage) {
-        this.stage = stage;
     }
 }

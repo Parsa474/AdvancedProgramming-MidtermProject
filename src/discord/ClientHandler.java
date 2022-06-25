@@ -8,54 +8,48 @@ public class ClientHandler implements Runnable {
 
     public static ArrayList<ClientHandler> clientHandlers = new ArrayList<>();
     private Model user;
-    private View printer;
-    private Socket socket;
-    private ObjectOutputStream objectOutputStream;
-    private ObjectInputStream objectInputStream;
-
+    private final MySocket mySocket;
 
     public ClientHandler(Socket socket) {
-        try {
-            this.socket = socket;
-            this.objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            this.objectInputStream = new ObjectInputStream(socket.getInputStream());
-            String username = (String) objectInputStream.readObject();
-            user = MainServer.users.get(username);
-            printer = new View();
-            clientHandlers.add(this);
-            broadcastMessage(user.getUsername() + " has logged in!");
-        } catch (IOException | ClassNotFoundException e) {
-            removeThisAndCloseEverything();
-        }
+        mySocket = new MySocket(socket);
+        clientHandlers.add(this);
     }
 
     @Override
     public void run() {
-        while (user != null && socket.isConnected()) {
+        while (mySocket.getConnectionSocket().isConnected()) {
             try {
-                switch (user.getStage()) {
-                    case 1 -> sendFriendRequest();
-                    case 2 -> addNewFriends();
-                    case 4 -> closeEverything();
+                Action action;
+                while (user == null) {
+                    action = mySocket.readAction();
+                    user = (Model) action.act();
+                    mySocket.write(user);
+                }
+                while (mySocket.getConnectionSocket().isConnected()) {
+                    action = mySocket.readAction();
+                    if (action == null) {
+                        mySocket.write(null);
+                    } else {
+                        mySocket.write(action.act());
+                    }
                 }
             } catch (IOException | ClassNotFoundException e) {
-                removeThisAndCloseEverything();
-                break;
+                mySocket.closeEverything();
+                throw new RuntimeException(e);
             }
         }
     }
 
+
     private void sendFriendRequest() throws IOException, ClassNotFoundException {
-        String friendUsername = (String) objectInputStream.readObject();
+        String friendUsername = mySocket.readString();
         MainServer.users.get(friendUsername).getFriendRequests().add(user.getUsername());
         MainServer.updateDatabase(MainServer.users.get(friendUsername));
-        //printer.printSuccessMessage("friend request");
-        broadcastMessage(printer.printSuccessMessage("friend request"));
     }
 
     private void addNewFriends() throws ClassNotFoundException {
         try {
-            String[] acceptedIndexes = ((String) objectInputStream.readObject()).split(" ");
+            String[] acceptedIndexes = mySocket.readString().split(" ");
             if (!(acceptedIndexes.length == 1 && acceptedIndexes[0].equals("0"))) {
                 for (String index : acceptedIndexes) {
                     String newFriend = user.getFriendRequests().get(Integer.parseInt(index) - 1);
@@ -65,7 +59,7 @@ public class ClientHandler implements Runnable {
                     user.getFriendRequests().remove(newFriend);
                 }
             }
-            String[] rejectedIndexes = ((String) objectInputStream.readObject()).split(" ");
+            String[] rejectedIndexes = mySocket.readString().split(" ");
             if (!(rejectedIndexes.length == 1 && rejectedIndexes[0].equals("0"))) {
                 for (String index : rejectedIndexes) {
                     String rejected = user.getFriendRequests().get(Integer.parseInt(index) - 1);
@@ -79,36 +73,21 @@ public class ClientHandler implements Runnable {
     }
 
     public void removeThisAndCloseEverything() {
-        //clientHandlers.remove(this);
-        //broadcastMessage("SERVER: " + clientUsername + " has left the chat!");
-        closeEverything();
-    }
-
-    public void closeEverything() {
-        try {
-            if (objectOutputStream != null) {
-                objectOutputStream.close();
-            }
-            if (objectInputStream != null) {
-                objectInputStream.close();
-            }
-            if (socket != null) {
-                socket.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        clientHandlers.remove(this);
+        broadcastMessage("SERVER: " + user.getUsername() + " has left the chat!");
+        mySocket.closeEverything();
     }
 
     public void broadcastMessage(String messageToSend) {
-        for (ClientHandler clientHandler : clientHandlers) {
-            try {
-                //if (!clientHandler.clientUsername.equals(clientUsername)) {
-                clientHandler.objectOutputStream.writeChars(messageToSend);
-                //}
-            } catch (IOException e) {
-                removeThisAndCloseEverything();
-            }
+        //for (ClientHandler clientHandler : clientHandlers) {
+        try {
+            //if (!clientHandler.clientUsername.equals(clientUsername)) {
+            //objectOutputStream.writeObject(new Message(messageToSend));
+            mySocket.write(messageToSend);
+            //}
+        } catch (IOException e) {
+            removeThisAndCloseEverything();
         }
+        //}
     }
 }

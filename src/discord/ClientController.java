@@ -7,23 +7,19 @@ import java.util.regex.Pattern;
 
 public class ClientController {
 
-    private final Model user;
-    private static View printer;
-    private final Socket socket;
-    private ObjectOutputStream objectOutputStream;
-    private ObjectInputStream objectInputStream;
+    private Model user;
+    private final View printer;
+    private final MySocket mySocket;
 
 
     public ClientController(Model user, Socket socket) {
         this.user = user;
-        this.socket = socket;
-        try {
-            this.objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            this.objectInputStream = new ObjectInputStream(socket.getInputStream());
-        } catch (IOException e) {
-            closeEverything();
-        }
+        mySocket = new MySocket(socket);
         printer = new View();
+    }
+
+    public void setUser(Model user) {
+        this.user = user;
     }
 
     public String toString() {
@@ -31,56 +27,55 @@ public class ClientController {
     }
 
     private void start() {
-        try {
-            objectOutputStream.writeChars(user.getUsername());
-            outer:
-            while (socket.isConnected()) {
-                if (user.getStage() == 0) {
-                    printer.printLoggedInMenu();
-                    user.setStage(MyScanner.getInt(1, 4));
-                } else {
-                    switch (user.getStage()) {
-                        case 1 -> sendFriendRequest();
-                        case 2 -> sendListInput();
-                        case 4 -> {
-                            closeEverything();
-                            break outer;
-                        }
-                    }
-                    user.setStage(0);
+        outer:
+        while (true) {
+            printer.printLoggedInMenu();
+            int command = MyScanner.getInt(1, 4);
+            switch (command) {
+                case 1 -> sendFriendRequest();
+                case 2 -> printer.printList(user.getFriendRequests());
+                case 4 -> {
+                    break outer;
                 }
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
     private void sendFriendRequest() {
-        String newFriend;
-        while (true) {
-            printer.printGetMessage("send");
-            printer.printGoBackMessage();
-            newFriend = MyScanner.getLine();
-            if ("".equals(newFriend)) return;
-            if (user.getFriends().contains(newFriend)) {
-                printer.printErrorMessage("already friend");
-                return;
-            }
-            if (MainServer.users.containsKey(newFriend)) {
-                break;
-            } else printer.printErrorMessage("not found username");
-        }
+        String username;
         try {
-            objectOutputStream.writeChars(newFriend);
-        } catch (IOException e) {
+            while (true) {
+                printer.printGetMessage("req");
+                printer.printGoBackMessage();
+                username = MyScanner.getLine();
+                if ("".equals(username)) {
+                    return;
+                }
+                if (user.getUsername().equals(username)) {
+                    printer.printErrorMessage("yourself");
+                    return;
+                }
+                if (user.getFriends().contains(username)) {
+                    printer.printErrorMessage("already friend");
+                    return;
+                }
+                mySocket.write(new FriendRequestAction(user.getUsername(), username));
+                boolean success = mySocket.readBoolean();
+                if (success) {
+                    printer.printSuccessMessage("friend request");
+                    break;
+                } else {
+                    printer.printErrorMessage("not found username");
+                }
+            }
+        } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
     private void sendListInput() {
         boolean acceptSucceed = false, rejectSucceed = false;
-        while (true) {
-
+        do {
             if (!acceptSucceed) {
                 printer.printGetMessage("friend request list");
                 printer.printConditionMessage("friend request list");
@@ -90,8 +85,9 @@ public class ClientController {
                     String[] acceptedIndexes = input.split(" ");
                     if (acceptedIndexes.length < 1) throw new Exception();
                     if (checkListInputFormat(acceptedIndexes)) throw new Exception();
-                    objectOutputStream.writeChars(input);
-                    System.out.println(printer.printSuccessMessage("accept"));
+                    //objectOutputStream.writeObject(new Message(input));
+                    mySocket.write(input);
+                    printer.printSuccessMessage("accept");
                     acceptSucceed = true;
                 } catch (Exception e) {
                     printer.printErrorMessage("list");
@@ -104,23 +100,15 @@ public class ClientController {
                     String[] rejectedIndexes = input.split(" ");
                     if (rejectedIndexes.length < 1) throw new Exception();
                     if (checkListInputFormat(rejectedIndexes)) throw new Exception();
-                    objectOutputStream.writeChars(input);
-                    System.out.println(printer.printSuccessMessage("reject"));
+                    //objectOutputStream.writeObject(new Message(input));
+                    mySocket.write(input);
+                    printer.printSuccessMessage("reject");
                     rejectSucceed = true;
                 } catch (Exception e) {
                     printer.printErrorMessage("list");
                 }
             }
-
-            if (acceptSucceed && rejectSucceed) {
-                try {
-                    objectOutputStream.flush();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                break;
-            }
-        }
+        } while (!acceptSucceed || !rejectSucceed);
     }
 
     private boolean checkListInputFormat(String[] array) {
@@ -137,40 +125,50 @@ public class ClientController {
         return output;
     }
 
-    private static ClientController login() {
+    public void listenForMessage() {
+        new Thread(() -> {
+            String successMessage;
+            while (mySocket.getConnectionSocket().isConnected()) {
+                try {
+                    successMessage = mySocket.readString();
+                    System.out.println(successMessage);
+                } catch (IOException | ClassNotFoundException e) {
+                    mySocket.closeEverything();
+                    break;
+                }
+            }
+        }).start();
+    }
+
+    private boolean login() throws IOException, ClassNotFoundException {
         while (true) {
-            MainServer.updateUsers();
             printer.printGoBackMessage();
             printer.printGetMessage("username");
             String username = MyScanner.getLine();
-            if ("".equals(username)) return null;
-            if (!MainServer.users.containsKey(username)) {
-                printer.printErrorMessage("not found username");
-            } else {
-                printer.printGetMessage("password");
-                String password = MyScanner.getLine();
-                if (MainServer.users.get(username).getPassword().equals(password)) {
-                    Socket clientControllerSocket;
-                    try {
-                        clientControllerSocket = new Socket("127.0.0.1", 6000);
-                    } catch (IOException e) {
-                        printer.printErrorMessage("main server");
-                        return null;
-                    }
-                    return new ClientController(MainServer.users.get(username), clientControllerSocket);
-                } else printer.printErrorMessage("password");
+            if ("".equals(username)) {
+                return false;
             }
+            printer.printGetMessage("password");
+            String password = MyScanner.getLine();
+            mySocket.write(new LaunchAction(username, password));
+            Model user = mySocket.readModel();
+            if (user != null) {
+                this.user = user;
+                break;
+            }
+            else printer.printErrorMessage("login");
         }
+        printer.printSuccessMessage("login");
+        return true;
     }
 
-    private static void signUp() {
-        Model newUser = recieveUser();
-        if (newUser == null) return;
-        MainServer.signUpUser(newUser);
-        System.out.println(printer.printSuccessMessage("signUp"));
+    private void signUp() throws IOException {
+        setUser(recieveUser());
+        mySocket.write(new LaunchAction(user));
+        printer.printSuccessMessage("signUp");
     }
 
-    private static Model recieveUser() {
+    private Model recieveUser() {
         String username;
         String password;
         String email;
@@ -183,7 +181,7 @@ public class ClientController {
         return new Model(username, password, email, phoneNumber);
     }
 
-    private static String receiveUsername() {
+    private String receiveUsername() {
         while (true) {
             printer.printGoBackMessage();
             printer.printGetMessage("username");
@@ -205,7 +203,7 @@ public class ClientController {
         }
     }
 
-    private static String receivePassword() {
+    private String receivePassword() {
         while (true) {
             printer.printGetMessage("password");
             printer.printConditionMessage("password");
@@ -219,7 +217,7 @@ public class ClientController {
         }
     }
 
-    private static String receiveEmail() {
+    private String receiveEmail() {
         while (true) {
             printer.printGetMessage("email");
             String input = MyScanner.getLine();
@@ -236,7 +234,7 @@ public class ClientController {
         }
     }
 
-    private static String receivePhoneNumber() {
+    private String receivePhoneNumber() {
         while (true) {
             printer.printGetMessage("phone number");
             String input = MyScanner.getLine();
@@ -254,56 +252,32 @@ public class ClientController {
         return mt.matches();
     }
 
-    public void closeEverything() {
-        try {
-            if (objectOutputStream != null) {
-                objectOutputStream.close();
-            }
-            if (objectInputStream != null) {
-                objectInputStream.close();
-            }
-            if (socket != null) {
-                socket.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void listenForMessage() {
-        new Thread(() -> {
-            String successMessage;
-            while (socket.isConnected()) {
-                try {
-                    successMessage = (String) objectInputStream.readObject();
-                    System.out.println(successMessage);
-                } catch (IOException | ClassNotFoundException e) {
-                    closeEverything();
-                    break;
-                }
-            }
-        }).start();
-    }
-
     public static void main(String[] args) {
-        printer = new View();
-        outer:
-        while (true) {
-            printer.printInitialMenu();
-            int input = MyScanner.getInt(1, 3);
-            switch (input) {
-                case 1 -> {
-                    ClientController loggedInClient = login();
-                    if (loggedInClient != null) {
-                        loggedInClient.listenForMessage();
-                        loggedInClient.start();
+        ClientController clientController;
+        try {
+            Socket clientControllerSocket = new Socket("127.0.0.1", 6000);
+            clientController = new ClientController(null, clientControllerSocket);
+            outer:
+            while (true) {
+                clientController.printer.printInitialMenu();
+                int input = MyScanner.getInt(1, 3);
+                switch (input) {
+                    case 1 -> {
+                        if (clientController.login()) {
+                            clientController.start();
+                        }
+                    }
+                    case 2 -> clientController.signUp();
+                    case 3 -> {
+                        break outer;
                     }
                 }
-                case 2 -> signUp();
-                case 3 -> {
-                    break outer;
-                }
             }
+        } catch (
+                IOException e) {
+            new View().printErrorMessage("main server");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 }

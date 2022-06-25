@@ -19,13 +19,15 @@ public class View {
             case "file not found" -> System.out.println("file not found!");
             case "IO" -> System.out.println("I/O error occurred!");
             case "not found username" -> System.out.println("A user by this username was not found!");
-            case "password" -> System.out.println("wrong password! try again");
+            case "login" -> System.out.println("A username by this password does not exist!");
             case "list" -> {
                 System.out.println("invalid input, you either entered a non-number character or didn't follow the format");
                 System.out.println("try again!");
             }
             case "main server" -> System.out.println("could not connect to the main server");
             case "already friend" -> System.out.println("This user is already your friend!");
+            case "yourself" -> System.out.println("You can't send a friend request to yourself!");
+            default -> System.out.println(error);
         }
     }
 
@@ -35,7 +37,7 @@ public class View {
 
     public void printGetMessage(String field) {
         switch (field) {
-            case "send" -> System.out.println("Enter the username of the user you want to send a friend request to");
+            case "req" -> System.out.println("Enter the username of the user you want to send a friend request to");
             case "friend request list" -> {
                 System.out.println("Enter the numbers of the friend requests you want to accept, enter 0 to select none");
                 System.out.println("follow the same manner for rejecting requests in a new line");
@@ -59,22 +61,14 @@ public class View {
         }
     }
 
-    public String printSuccessMessage(String field) {
+    public void printSuccessMessage(String field) {
         switch (field) {
-            case "signUp" -> {
-                return "Signed up successfully!";
-            }
-            case "friend request" -> {
-                return "The request was sent successfully";
-            }
-            case "accept" -> {
-                return "The specified users' requests were accepted";
-            }
-            case "reject" -> {
-                return "The specified users' requests were rejected";
-            }
+            case "signUp" -> System.out.println("Signed up successfully!");
+            case "login" -> System.out.println("logged in successfully");
+            case "friend request" -> System.out.println("The request was sent successfully");
+            case "accept" -> System.out.println("The specified users' requests were accepted");
+            case "reject" -> System.out.println("The specified users' requests were rejected");
         }
-        return null;
     }
 
     public void printLoggedInMenu() {
