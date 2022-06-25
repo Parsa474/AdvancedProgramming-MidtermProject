@@ -5,7 +5,7 @@ import java.net.Socket;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ClientController{
+public class ClientController {
 
     private final Model user;
     private static View printer;
@@ -26,9 +26,13 @@ public class ClientController{
         printer = new View();
     }
 
+    public String toString() {
+        return user.toString();
+    }
+
     private void start() {
         try {
-            objectOutputStream.writeObject(user.getUsername());
+            objectOutputStream.writeChars(user.getUsername());
             outer:
             while (socket.isConnected()) {
                 if (user.getStage() == 0) {
@@ -67,7 +71,7 @@ public class ClientController{
             } else printer.printErrorMessage("not found username");
         }
         try {
-            objectOutputStream.writeObject(newFriend);
+            objectOutputStream.writeChars(newFriend);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -86,7 +90,7 @@ public class ClientController{
                     String[] acceptedIndexes = input.split(" ");
                     if (acceptedIndexes.length < 1) throw new Exception();
                     if (checkListInputFormat(acceptedIndexes)) throw new Exception();
-                    objectOutputStream.writeObject(input);
+                    objectOutputStream.writeChars(input);
                     System.out.println(printer.printSuccessMessage("accept"));
                     acceptSucceed = true;
                 } catch (Exception e) {
@@ -100,7 +104,7 @@ public class ClientController{
                     String[] rejectedIndexes = input.split(" ");
                     if (rejectedIndexes.length < 1) throw new Exception();
                     if (checkListInputFormat(rejectedIndexes)) throw new Exception();
-                    objectOutputStream.writeObject(input);
+                    objectOutputStream.writeChars(input);
                     System.out.println(printer.printSuccessMessage("reject"));
                     rejectSucceed = true;
                 } catch (Exception e) {
@@ -252,11 +256,11 @@ public class ClientController{
 
     public void closeEverything() {
         try {
-            if (objectInputStream != null) {
-                objectInputStream.close();
-            }
             if (objectOutputStream != null) {
                 objectOutputStream.close();
+            }
+            if (objectInputStream != null) {
+                objectInputStream.close();
             }
             if (socket != null) {
                 socket.close();
@@ -266,8 +270,19 @@ public class ClientController{
         }
     }
 
-    public String toString() {
-        return user.toString();
+    public void listenForMessage() {
+        new Thread(() -> {
+            String successMessage;
+            while (socket.isConnected()) {
+                try {
+                    successMessage = (String) objectInputStream.readObject();
+                    System.out.println(successMessage);
+                } catch (IOException | ClassNotFoundException e) {
+                    closeEverything();
+                    break;
+                }
+            }
+        }).start();
     }
 
     public static void main(String[] args) {
@@ -280,6 +295,7 @@ public class ClientController{
                 case 1 -> {
                     ClientController loggedInClient = login();
                     if (loggedInClient != null) {
+                        loggedInClient.listenForMessage();
                         loggedInClient.start();
                     }
                 }

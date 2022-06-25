@@ -2,10 +2,11 @@ package discord;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class ClientHandler implements Runnable {
 
-    //public static ArrayList<ClientHandler> clientHandlers = new ArrayList<>();
+    public static ArrayList<ClientHandler> clientHandlers = new ArrayList<>();
     private Model user;
     private View printer;
     private Socket socket;
@@ -21,28 +22,25 @@ public class ClientHandler implements Runnable {
             String username = (String) objectInputStream.readObject();
             user = MainServer.users.get(username);
             printer = new View();
-            //broadcastMessage(user.getUsername() + " has entered the app!");
-        } catch (IOException e) {
-            closeEverything();
-        } catch (ClassNotFoundException e) {
-            System.out.println();
+            clientHandlers.add(this);
+            broadcastMessage(user.getUsername() + " has logged in!");
+        } catch (IOException | ClassNotFoundException e) {
+            removeThisAndCloseEverything();
         }
     }
 
     @Override
     public void run() {
-        while (socket.isConnected()) {
+        while (user != null && socket.isConnected()) {
             try {
                 switch (user.getStage()) {
                     case 1 -> sendFriendRequest();
                     case 2 -> addNewFriends();
                     case 4 -> closeEverything();
                 }
-            } catch (IOException e) {
-                closeEverything();
-                throw new RuntimeException(e);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
+            } catch (IOException | ClassNotFoundException e) {
+                removeThisAndCloseEverything();
+                break;
             }
         }
     }
@@ -52,6 +50,7 @@ public class ClientHandler implements Runnable {
         MainServer.users.get(friendUsername).getFriendRequests().add(user.getUsername());
         MainServer.updateDatabase(MainServer.users.get(friendUsername));
         //printer.printSuccessMessage("friend request");
+        broadcastMessage(printer.printSuccessMessage("friend request"));
     }
 
     private void addNewFriends() throws ClassNotFoundException {
@@ -75,7 +74,7 @@ public class ClientHandler implements Runnable {
             }
             MainServer.updateDatabase(user);
         } catch (IOException e) {
-            printer.printErrorMessage("IO");
+            throw new RuntimeException(e);
         }
     }
 
@@ -98,6 +97,18 @@ public class ClientHandler implements Runnable {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void broadcastMessage(String messageToSend) {
+        for (ClientHandler clientHandler : clientHandlers) {
+            try {
+                //if (!clientHandler.clientUsername.equals(clientUsername)) {
+                clientHandler.objectOutputStream.writeChars(messageToSend);
+                //}
+            } catch (IOException e) {
+                removeThisAndCloseEverything();
+            }
         }
     }
 }
