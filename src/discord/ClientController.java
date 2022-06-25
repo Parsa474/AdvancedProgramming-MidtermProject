@@ -164,7 +164,7 @@ public class ClientController {
             }
             printer.printGetMessage("password");
             String password = MyScanner.getLine();
-            mySocket.write(new LaunchAction(username, password));
+            mySocket.write(new LoginAction(username, password));
             Model user = mySocket.readModel();
             if (user != null) {
                 this.user = user;
@@ -175,10 +175,13 @@ public class ClientController {
         return true;
     }
 
-    private void signUp() throws IOException {
+    private void signUp() throws IOException, ClassNotFoundException {
         setUser(recieveUser());
-        mySocket.write(new LaunchAction(user));
-        printer.printSuccessMessage("signUp");
+        mySocket.write(new SignupAction(user));
+        if (mySocket.readBoolean()) {
+            printer.printSuccessMessage("signUp");
+            start();
+        }
     }
 
     private Model recieveUser() {
