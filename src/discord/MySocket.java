@@ -7,19 +7,25 @@ import java.net.Socket;
 import java.util.LinkedList;
 
 public class MySocket {
-
+    // Fields:
     private Socket connectionSocket;
     private ObjectOutputStream objectOutputStream;
     private ObjectInputStream objectInputStream;
 
+    // Constructors:
     public MySocket(Socket connectionSocket) {
+        this.connectionSocket = connectionSocket;
         try {
-            this.connectionSocket = connectionSocket;
             this.objectOutputStream = new ObjectOutputStream(connectionSocket.getOutputStream());
             this.objectInputStream = new ObjectInputStream(connectionSocket.getInputStream());
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    // Methods:
+    public ObjectOutputStream getObjectOutputStream() {
+        return objectOutputStream;
     }
 
     public Socket getConnectionSocket() {

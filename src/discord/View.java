@@ -1,5 +1,6 @@
 package discord;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 public class View {
@@ -89,5 +90,9 @@ public class View {
         for (int i = 0; i < list.size(); i++) {
             System.out.printf("%d. %s\n", i + 1, list.get(i));
         }
+    }
+
+    public void println(String text) {
+        System.out.println(text);
     }
 }

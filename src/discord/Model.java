@@ -9,8 +9,8 @@ public class Model implements Serializable {
     private String password;
     private String email;
     private String phoneNumber;
-    private final LinkedList<String> friendRequests;
-    private final LinkedList<String> friends;
+    private LinkedList<String> friendRequests;
+    private LinkedList<String> friends;
     private Status status;
 
     public Model(String username, String password, String email, String phoneNumber) {
@@ -63,17 +63,17 @@ public class Model implements Serializable {
         return friendRequests;
     }
 
-//    public void setFriendRequests(LinkedList<String> friendRequests) {
-//        this.friendRequests = friendRequests;
-//    }
+    public void setFriendRequests(LinkedList<String> friendRequests) {
+        this.friendRequests = friendRequests;
+    }
 
     public LinkedList<String> getFriends() {
         return friends;
     }
 
-//    public void setFriends(LinkedList<String> friends) {
-//        this.friends = friends;
-//    }
+    public void setFriends(LinkedList<String> friends) {
+        this.friends = friends;
+    }
 
     public Status getStatus() {
         return status;

@@ -2,22 +2,23 @@ package discord;
 
 import java.io.*;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainServer {
-
+    // Fields:
     //public static HashMap<String, Model> users = new HashMap<>();
     private static Map<String, Model> users = Collections.synchronizedMap(new HashMap<>());
     private final ServerSocket serverSocket;
 
+    // Constructors:
     public MainServer(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
         users = readUsers();
     }
 
+    // Methods:
     private static void makeDirectory(String path) {
         if (new File(path).exists()) return;
         if (!new File(path).mkdir()) {
@@ -29,17 +30,20 @@ public class MainServer {
     private static HashMap<String, Model> readUsers() {
         makeDirectory("assets");
         makeDirectory("assets\\users");
-        HashMap<String, Model> clients = new HashMap<>();
+        HashMap<String, Model> users = new HashMap<>();
         File folder = new File("assets\\users");
         File[] listOfFiles = folder.listFiles();
         if (listOfFiles != null)
             for (File file : listOfFiles) {
                 Model newUser = readUser(file);
-                if (newUser != null)
-                    clients.put(newUser.getUsername(), newUser);
-                else System.out.println("null user was read!");
+                if (newUser != null) {
+                    users.put(newUser.getUsername(), newUser);
+                }
+                else {
+                    System.out.println("null user was read!");
+                }
             }
-        return clients;
+        return users;
     }
 
     private static Model readUser(File file) {
@@ -66,12 +70,22 @@ public class MainServer {
         return users.get(username);
     }*/
 
+    public static LinkedList<String> updatingFriendRequests(String username) {
+        users = readUsers();
+        return users.get(username).getFriendRequests();
+    }
+
+    public static LinkedList<String> updatingFriends(String username) {
+        users = readUsers();
+        return users.get(username).getFriends();
+    }
+
     public static Map<String, Model> getUsers() {
         return users;
     }
 
     public static void updateUsers() {
-        users = readUsers();
+//        users = readUsers();
     }
 
     private static void handleClosingInputs(FileInputStream fileIn, ObjectInputStream in) {
@@ -91,10 +105,11 @@ public class MainServer {
         try {
             ExecutorService executorService = Executors.newCachedThreadPool();
             while (!serverSocket.isClosed()) {
-                Socket socket = serverSocket.accept();
+//                Socket socket = serverSocket.accept();
+                MySocket newConnectionSocket = new MySocket(serverSocket.accept());
                 System.out.println("A new client has connected");
-                ClientHandler clientHandler = new ClientHandler(socket);
-                executorService.execute(clientHandler);
+//                ClientHandler clientHandler = new ClientHandler(newConnectionSocket);
+                executorService.execute(new ClientHandler(newConnectionSocket));
             }
         } catch (IOException e) {
             closeServerSocket();
