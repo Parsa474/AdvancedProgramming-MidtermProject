@@ -18,7 +18,17 @@ public class MainServer {
         users = readUsers();
     }
 
+    private static void makeDirectory(String path) {
+        if (new File(path).exists()) return;
+        if (!new File(path).mkdir()) {
+            System.out.println("Could not create the " + path + " directory!");
+            throw new RuntimeException();
+        }
+    }
+
     private static HashMap<String, Model> readUsers() {
+        makeDirectory("assets");
+        makeDirectory("assets\\users");
         HashMap<String, Model> clients = new HashMap<>();
         File folder = new File("assets\\users");
         File[] listOfFiles = folder.listFiles();
