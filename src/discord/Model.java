@@ -18,8 +18,8 @@ public class Model implements Serializable {
         this.password = password;
         this.email = email;
         this.phoneNumber = phoneNumber;
-        friendRequests = new LinkedList<>();
-        friends = new LinkedList<>();
+        this.friendRequests = new LinkedList<>();
+        this.friends = new LinkedList<>();
         status = Status.Offline;
     }
 
@@ -63,9 +63,17 @@ public class Model implements Serializable {
         return friendRequests;
     }
 
+//    public void setFriendRequests(LinkedList<String> friendRequests) {
+//        this.friendRequests = friendRequests;
+//    }
+
     public LinkedList<String> getFriends() {
         return friends;
     }
+
+//    public void setFriends(LinkedList<String> friends) {
+//        this.friends = friends;
+//    }
 
     public Status getStatus() {
         return status;

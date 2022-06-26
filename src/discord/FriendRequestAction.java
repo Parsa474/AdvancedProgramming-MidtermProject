@@ -12,10 +12,10 @@ public class FriendRequestAction extends Action {
 
     @Override
     public Object act() {
-        if (!MainServer.users.containsKey(username)) {
+        if (!MainServer.getUsers().containsKey(username)) {
             return false;
         } else {
-            Model user = MainServer.users.get(username);
+            Model user = MainServer.getUsers().get(username);
             if (user.getFriendRequests().contains(requester)) {
                 return false;
             }

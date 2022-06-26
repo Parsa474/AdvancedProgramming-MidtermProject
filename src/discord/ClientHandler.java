@@ -17,7 +17,8 @@ public class ClientHandler implements Runnable {
 
     @Override
     public void run() {
-        while (mySocket.getConnectionSocket().isConnected()) {
+        //outer:
+        while (true) {
             try {
                 Action action;
                 while (user == null) {
@@ -25,19 +26,20 @@ public class ClientHandler implements Runnable {
                     user = (Model) action.act();
                     mySocket.write(user);
                 }
-                while (mySocket.getConnectionSocket().isConnected()) {
+                while (true) {
                     action = mySocket.readAction();
                     // for logging out
-                    if (action == null) {
+                    if (action != null) {
+                        mySocket.write(action.act());
+                    } else {
                         user = null;
                         break;
-                    } else {
-                        mySocket.write(action.act());
                     }
                 }
             } catch (IOException | ClassNotFoundException e) {
+                clientHandlers.remove(this);
                 mySocket.closeEverything();
-                throw new RuntimeException(e);
+                break;
             }
         }
     }

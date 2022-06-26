@@ -1,29 +1,29 @@
 package discord;
 
-import java.util.ArrayList;
-
 public class CheckFriendRequestsAction extends Action {
 
-    private final Model user;
-    private final ArrayList<Integer> acceptedIndexes;
-    private final ArrayList<Integer> rejectedIndexes;
+    private final String username;
+    private final int index;
+    private final boolean accept;
 
-    public CheckFriendRequestsAction(Model user, ArrayList<Integer> acceptedIndexes, ArrayList<Integer> rejectedIndexes) {
-        this.user = user;
-        this.acceptedIndexes = acceptedIndexes;
-        this.rejectedIndexes = rejectedIndexes;
+    public CheckFriendRequestsAction(String username, int index, boolean accept) {
+        this.username = username;
+        this.index = index;
+        this.accept = accept;
     }
 
     @Override
     public Object act() {
-        for (int i : acceptedIndexes) {
-            user.getFriends().add(user.getFriendRequests().get(i - 1));
-            user.getFriendRequests().remove(i - 1);
+        Model user = MainServer.getUsers().get(username);
+        String requesterUsername = user.getFriendRequests().get(index);
+        Model requester = MainServer.getUsers().get(requesterUsername);
+        if(accept) {
+            user.getFriends().add(requesterUsername);
+            requester.getFriends().add(username);
+            MainServer.updateDatabase(requester);
         }
-        for (int i : rejectedIndexes) {
-            user.getFriendRequests().remove(i - 1);
-        }
+        user.getFriendRequests().remove(index);
         MainServer.updateDatabase(user);
-        return new Object();
+        return user;
     }
 }

@@ -28,7 +28,9 @@ public class View {
             case "already friend" -> System.out.println("This user is already your friend!");
             case "yourself" -> System.out.println("You can't send a friend request to yourself!");
             case "friend request" -> System.out.println("invalid username or friend request already sent!");
-            case "index" -> System.out.println("Index 0 or more than the number of friends used!");
+            case "boundary" -> System.out.println("Out of boundary index used!");
+            case "repeat" -> System.out.println("You can't reject an already accepted request!");
+            case "length" -> System.out.println("Invalid input length");
             default -> System.out.println(error);
         }
     }
@@ -40,10 +42,13 @@ public class View {
     public void printGetMessage(String field) {
         switch (field) {
             case "req" -> System.out.println("Enter the username of the user you want to send a friend request to");
-            case "friend request list" -> {
-                System.out.println("Enter the numbers of the friend requests you want to accept, enter 0 to select none");
-                System.out.println("follow the same manner for rejecting requests in a new line");
+            case "index" -> {
+                System.out.println("Enter the index you want to accept followed by 'A' or reject followed by 'R'");
+                System.out.println("Enter 0 to go back");
             }
+            case "accept" ->
+                    System.out.println("Enter the numbers of the friend requests you want to accept, enter 0 to select none");
+            case "reject" -> System.out.println("follow the same manner for rejecting requests in a new line");
             default -> {
                 System.out.println("enter your " + field);
                 if (field.equals("phone number")) System.out.println("(optional, press Enter if you want to skip)");
@@ -68,8 +73,8 @@ public class View {
             case "signUp" -> System.out.println("Signed up successfully!");
             case "login" -> System.out.println("logged in successfully");
             case "friend request" -> System.out.println("The request was sent successfully");
-            case "accept" -> System.out.println("The specified users' requests were accepted");
-            case "reject" -> System.out.println("The specified users' requests were rejected");
+            case "accept" -> System.out.println("The specified user's request was accepted");
+            case "reject" -> System.out.println("The specified user's request was rejected");
         }
     }
 

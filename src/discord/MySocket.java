@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.LinkedList;
 
 public class MySocket {
 
@@ -63,5 +64,13 @@ public class MySocket {
 
     public boolean readBoolean() throws IOException, ClassNotFoundException {
         return (boolean) objectInputStream.readObject();
+    }
+
+    public void flush() throws IOException {
+        objectOutputStream.flush();
+    }
+
+    public LinkedList<String> readStringLinkedList() throws IOException, ClassNotFoundException {
+        return (LinkedList<String>) objectInputStream.readObject();
     }
 }

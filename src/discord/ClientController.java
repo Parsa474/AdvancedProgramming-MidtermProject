@@ -2,7 +2,6 @@ package discord;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,15 +11,10 @@ public class ClientController {
     private final View printer;
     private final MySocket mySocket;
 
-
     public ClientController(Model user, Socket socket) {
         this.user = user;
         mySocket = new MySocket(socket);
         printer = new View();
-    }
-
-    public void setUser(Model user) {
-        this.user = user;
     }
 
     public String toString() {
@@ -34,10 +28,14 @@ public class ClientController {
             int command = MyScanner.getInt(1, 4);
             switch (command) {
                 case 1 -> sendFriendRequest();
-                case 2 -> sendRequestsIndexes();
-                case 3 -> printer.printList(user.getFriends());
+                case 2 -> sendRequestIndex();
+                case 3 -> {
+                    printer.printList(user.getFriendRequests());
+                    printer.printList(user.getFriends());
+                }
                 case 4 -> {
                     mySocket.write(null);
+                    user = null;
                     break outer;
                 }
             }
@@ -76,67 +74,43 @@ public class ClientController {
         }
     }
 
-    private void sendRequestsIndexes() throws IOException {
-        boolean acceptSucceed = false, rejectSucceed = false;
-        ArrayList<Integer> acceptedIndexes = new ArrayList<>();
-        ArrayList<Integer> rejectedIndexes = new ArrayList<>();
-        int count = user.getFriends().size();
-        do {
-            printer.printGetMessage("friend request list");
-            printer.printConditionMessage("friend request list");
+    private void sendRequestIndex() {
+        while (true) {
             printer.printList(user.getFriendRequests());
-            if (!acceptSucceed) {
-                try {
-                    String input = MyScanner.getLine();
-                    String[] accepted = input.split(" ");
-                    for (String index : accepted) {
-                        acceptedIndexes.add(Integer.parseInt(index));
+            printer.printGetMessage("index");
+            String input = MyScanner.getLine();
+            char[] inputs = input.toCharArray();
+            Boolean accept = null;
+            try {
+                switch (inputs.length) {
+                    case 1 -> {
+                        if (inputs[0] == '0') return;
+                        else printer.printErrorMessage("format");
                     }
-                    if (acceptedIndexes.size() == 1 && acceptedIndexes.get(0) == 0) {
-                        acceptSucceed = true;
-                    } else {
-                        if (checkListInputFormat(acceptedIndexes, count)) {
-                            printer.printSuccessMessage("accept");
-                            acceptSucceed = true;
-                        } else {
-                            printer.printErrorMessage("index");
-                        }
+                    case 2 -> {
+                        int index = Character.getNumericValue(inputs[0]);
+                        if (index > 0 && index < user.getFriendRequests().size() + 1) {
+                            switch (inputs[1]) {
+                                case 'A' -> accept = true;
+                                case 'R' -> accept = false;
+                                default -> printer.printErrorMessage("format");
+                            }
+                            if (accept != null) {
+                                mySocket.write(new CheckFriendRequestsAction(user.getUsername(), index - 1, accept));
+                                if (accept) {
+                                    printer.printSuccessMessage("accept");
+                                } else {
+                                    printer.printSuccessMessage("reject");
+                                }
+                            }
+                        } else printer.printErrorMessage("boundary");
                     }
-                } catch (Exception e) {
-                    printer.printErrorMessage("list");
+                    default -> printer.printErrorMessage("length");
                 }
+            } catch (Exception e) {
+                printer.printErrorMessage("format");
             }
-            if (!rejectSucceed) {
-                try {
-                    String input = MyScanner.getLine();
-                    String[] rejected = input.split(" ");
-                    for (String index : rejected) {
-                        rejectedIndexes.add(Integer.parseInt(index));
-                    }
-                    if (rejectedIndexes.size() == 1 && rejectedIndexes.get(0) == 0) {
-                        rejectSucceed = true;
-                    } else {
-                        if (checkListInputFormat(rejectedIndexes, count)) {
-                            printer.printSuccessMessage("reject");
-                            rejectSucceed = true;
-                        } else {
-                            printer.printErrorMessage("index");
-                        }
-                    }
-                } catch (Exception e) {
-                    printer.printErrorMessage("list");
-                }
-            }
-        } while (!acceptSucceed || !rejectSucceed);
-        mySocket.write(new CheckFriendRequestsAction(user, acceptedIndexes, rejectedIndexes));
-    }
-
-    private boolean checkListInputFormat(ArrayList<Integer> indexes, int max) {
-        boolean output = true;
-        for (Integer index : indexes) {
-            output = output && (index > 0 && index < max);
         }
-        return output;
     }
 
     public void listenForMessage() {
@@ -155,30 +129,29 @@ public class ClientController {
     }
 
     private boolean login() throws IOException, ClassNotFoundException {
-        while (true) {
+        while (user == null) {
             printer.printGoBackMessage();
             printer.printGetMessage("username");
             String username = MyScanner.getLine();
-            if ("".equals(username)) {
-                return false;
-            }
-            printer.printGetMessage("password");
-            String password = MyScanner.getLine();
-            mySocket.write(new LoginAction(username, password));
-            Model user = mySocket.readModel();
-            if (user != null) {
-                this.user = user;
-                break;
-            } else printer.printErrorMessage("login");
+            if (!"".equals(username)) {
+                printer.printGetMessage("password");
+                String password = MyScanner.getLine();
+                mySocket.write(new LoginAction(username, password));
+                user = mySocket.readModel();
+                if (user != null) {
+                    printer.printSuccessMessage("login");
+                    return true;
+                }
+            } else break;
         }
-        printer.printSuccessMessage("login");
-        return true;
+        return false;
     }
 
     private void signUp() throws IOException, ClassNotFoundException {
-        setUser(recieveUser());
-        mySocket.write(new SignupAction(user));
-        if (mySocket.readBoolean()) {
+        Model newUser = recieveUser();
+        if (newUser != null) {
+            mySocket.write(new SignUpAction(newUser));
+            user = mySocket.readModel();
             printer.printSuccessMessage("signUp");
             start();
         }
@@ -205,7 +178,7 @@ public class ClientController {
             String input = MyScanner.getLine();
             if ("".equals(input)) return null;
             else {
-                if (!MainServer.users.containsKey(input)) {
+                if (!MainServer.getUsers().containsKey(input)) {
                     String regex = "^[A-Za-z0-9]{6,}$";
                     if (isMatched(regex, input)) {
                         return input;
@@ -269,8 +242,8 @@ public class ClientController {
     }
 
     public static void main(String[] args) {
+        ClientController clientController = null;
         try {
-            ClientController clientController;
             Socket clientControllerSocket = new Socket("127.0.0.1", 6000);
             clientController = new ClientController(null, clientControllerSocket);
             outer:
@@ -285,15 +258,17 @@ public class ClientController {
                     }
                     case 2 -> clientController.signUp();
                     case 3 -> {
+                        clientController.mySocket.closeEverything();
                         break outer;
                     }
                 }
             }
-        } catch (
-                IOException e) {
+        } catch (IOException e) {
             new View().printErrorMessage("main server");
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
+        } catch (Exception e) {
+            if (clientController != null) clientController.mySocket.closeEverything();
         }
     }
 }

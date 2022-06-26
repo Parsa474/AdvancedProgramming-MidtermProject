@@ -9,14 +9,15 @@ import java.util.concurrent.Executors;
 
 public class MainServer {
 
-    public static HashMap<String, Model> users = new HashMap<>();
-    //public static Map<String, Model> users = Collections.synchronizedMap(new HashMap<>());
+    //public static HashMap<String, Model> users = new HashMap<>();
+    private static Map<String, Model> users = Collections.synchronizedMap(new HashMap<>());
     private final ServerSocket serverSocket;
 
     public MainServer(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
         users = readUsers();
     }
+
     private static HashMap<String, Model> readUsers() {
         HashMap<String, Model> clients = new HashMap<>();
         File folder = new File("assets\\users");
@@ -48,6 +49,15 @@ public class MainServer {
             handleClosingInputs(fileIn, in);
         }
         return null;
+    }
+
+    /*public static Model updateServerAndReadUser(String username) {
+        users = readUsers();
+        return users.get(username);
+    }*/
+
+    public static Map<String, Model> getUsers() {
+        return users;
     }
 
     public static void updateUsers() {

@@ -12,12 +12,14 @@ public class LoginAction extends Action {
 
     @Override
     public Object act() {
-        if (!MainServer.users.containsKey(username)) {
+        if (!MainServer.getUsers().containsKey(username)) {
             return null;
-        } else if (!MainServer.users.get(username).getPassword().equals(password)) {
+        } else if (!MainServer.getUsers().get(username).getPassword().equals(password)) {
             return null;
         } else {
-            return MainServer.users.get(username);
+            Model user = MainServer.getUsers().get(username);
+            user.setStatus(Model.Status.Online);
+            return user;
         }
     }
 }
