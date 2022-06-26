@@ -17,7 +17,7 @@ public class CheckFriendRequestsAction extends Action {
         Model user = MainServer.getUsers().get(username);
         String requesterUsername = user.getFriendRequests().get(index);
         Model requester = MainServer.getUsers().get(requesterUsername);
-        if(accept) {
+        if (accept) {
             user.getFriends().add(requesterUsername);
             requester.getFriends().add(username);
             MainServer.updateDatabase(requester);

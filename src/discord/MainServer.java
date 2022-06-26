@@ -61,17 +61,18 @@ public class MainServer {
         return null;
     }
 
-    /*public static Model updateServerAndReadUser(String username) {
+    public static LinkedList<String> updateServerAndGetFriendRequestsList(String username) {
         users = readUsers();
-        return users.get(username);
-    }*/
+        return users.get(username).getFriendRequests();
+    }
+
+    public static LinkedList<String> updateServerAndGetFriendsList(String username) {
+        users = readUsers();
+        return users.get(username).getFriends();
+    }
 
     public static Map<String, Model> getUsers() {
         return users;
-    }
-
-    public static void updateUsers() {
-        users = readUsers();
     }
 
     private static void handleClosingInputs(FileInputStream fileIn, ObjectInputStream in) {
@@ -114,11 +115,6 @@ public class MainServer {
     public static void signUpUser(Model newUser) {
         users.put(newUser.getUsername(), newUser);
         updateDatabase(newUser);
-    }
-
-    public static void updateUserInfo(Model user) {
-        MainServer.users.replace(user.getUsername(), user);
-        updateDatabase(user);
     }
 
     public static void updateDatabase(Model user) {

@@ -24,12 +24,14 @@ public class ClientHandler implements Runnable {
                 while (user == null) {
                     action = mySocket.readAction();
                     user = (Model) action.act();
+                    mySocket.getObjectOutputStream().reset();
                     mySocket.write(user);
                 }
                 while (true) {
                     action = mySocket.readAction();
                     // for logging out
                     if (action != null) {
+                        mySocket.getObjectOutputStream().reset();
                         mySocket.write(action.act());
                     } else {
                         user = null;

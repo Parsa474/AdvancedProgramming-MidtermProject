@@ -4,17 +4,16 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.LinkedList;
 
 public class MySocket {
 
-    private Socket connectionSocket;
+    private final Socket connectionSocket;
     private ObjectOutputStream objectOutputStream;
     private ObjectInputStream objectInputStream;
 
     public MySocket(Socket connectionSocket) {
+        this.connectionSocket = connectionSocket;
         try {
-            this.connectionSocket = connectionSocket;
             this.objectOutputStream = new ObjectOutputStream(connectionSocket.getOutputStream());
             this.objectInputStream = new ObjectInputStream(connectionSocket.getInputStream());
         } catch (IOException e) {
@@ -66,11 +65,7 @@ public class MySocket {
         return (boolean) objectInputStream.readObject();
     }
 
-    public void flush() throws IOException {
-        objectOutputStream.flush();
-    }
-
-    public LinkedList<String> readStringLinkedList() throws IOException, ClassNotFoundException {
-        return (LinkedList<String>) objectInputStream.readObject();
+    public ObjectOutputStream getObjectOutputStream() {
+        return objectOutputStream;
     }
 }

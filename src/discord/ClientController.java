@@ -10,11 +10,13 @@ public class ClientController {
     private Model user;
     private final View printer;
     private final MySocket mySocket;
+    //private Boolean success;
 
     public ClientController(Model user, Socket socket) {
         this.user = user;
         mySocket = new MySocket(socket);
         printer = new View();
+        //success = false;
     }
 
     public String toString() {
@@ -22,15 +24,19 @@ public class ClientController {
     }
 
     private void start() throws IOException {
+        //listenForModelUpdate();
         outer:
         while (true) {
             printer.printLoggedInMenu();
             int command = MyScanner.getInt(1, 4);
             switch (command) {
                 case 1 -> sendFriendRequest();
-                case 2 -> sendRequestIndex();
+                case 2 -> {
+                    user.setFriendRequests(MainServer.updateServerAndGetFriendRequestsList(user.getUsername()));
+                    sendRequestIndex();
+                }
                 case 3 -> {
-                    printer.printList(user.getFriendRequests());
+                    user.setFriends(MainServer.updateServerAndGetFriendsList(user.getUsername()));
                     printer.printList(user.getFriends());
                 }
                 case 4 -> {
@@ -62,12 +68,16 @@ public class ClientController {
                 }
                 mySocket.write(new FriendRequestAction(user.getUsername(), username));
                 boolean success = mySocket.readBoolean();
+                //synchronized (success) {
+                //    success.wait();
+                //Thread.sleep(1000);
                 if (success) {
                     printer.printSuccessMessage("friend request");
                     break;
                 } else {
                     printer.printErrorMessage("friend request");
                 }
+                //}
             }
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -102,6 +112,7 @@ public class ClientController {
                                 } else {
                                     printer.printSuccessMessage("reject");
                                 }
+                                user = mySocket.readModel();
                             }
                         } else printer.printErrorMessage("boundary");
                     }
@@ -148,7 +159,7 @@ public class ClientController {
     }
 
     private void signUp() throws IOException, ClassNotFoundException {
-        Model newUser = recieveUser();
+        Model newUser = receiveUser();
         if (newUser != null) {
             mySocket.write(new SignUpAction(newUser));
             user = mySocket.readModel();
@@ -157,7 +168,7 @@ public class ClientController {
         }
     }
 
-    private Model recieveUser() {
+    private Model receiveUser() {
         String username;
         String password;
         String email;
