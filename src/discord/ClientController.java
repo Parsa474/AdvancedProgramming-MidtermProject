@@ -146,18 +146,19 @@ public class ClientController {
                                 printer.println("(seen)");
                             }
                         } else if (inObject instanceof Model) {
-                            user = (Model) inObject;
+                            synchronized (user) {  // should it be user or "this"???????
+                                user.notify();
+                                user = (Model) inObject;
+                            }
                             break;
                         }
-                    } catch (InterruptedIOException e) {
-                        printer.println("bebinim chie");
                     } catch (IOException | ClassNotFoundException e) {
                         e.printStackTrace();
-//                mySocket.closeEverything();
+//                        mySocket.closeEverything();
                         break;
                     }
                 }
-                printer.println("dige listen nemikonam");
+//                printer.println("dige listen nemikonam");
             }
         };
     }
@@ -177,19 +178,13 @@ public class ClientController {
         printer.printList(user.getPrivateChats().get(friendName));
 
         // receiving messages
-//        ExecutorService executorService = Executors.newCachedThreadPool();
-//        MessageListener messageListener = new MessageListener(mySocket, printer);
         Thread listener = new Thread(listenForMessage());
         listener.start();
-//        executorService.execute(listener);
 
         // sending message
         printer.println("enter \"#exit\" to exit the chat");
         while (true) {
             String message = MyScanner.getLine();
-//            if (message.equals("#exit")) {
-//                break;
-//            }
             try {
                 mySocket.write(new ChatAction(user.getUsername(), message, friendName));
                 if (message.equals("#exit")) {
@@ -199,18 +194,20 @@ public class ClientController {
                 printer.printErrorMessage("IO");
             }
         }
-//        executorService.shutdownNow();
-//        listener.interrupt();
-//        messageListener.shutdown();
-//        if (listener.isAlive()) {
-//            printer.println("exiting from chat!!");
+
+//        try {
+//            Thread.sleep(1000);
+//        }catch (InterruptedException e) {
+//            e.printStackTrace();
 //        }
-        try {
-            Thread.sleep(1000);
-        }catch (InterruptedException e) {
-            e.printStackTrace();
+        synchronized (user) {
+            try {
+                user.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            user.getIsInChat().replace(friendName, false);
         }
-        user.getIsInChat().replace(friendName, false);
         updateUserOnServer();
     }
 

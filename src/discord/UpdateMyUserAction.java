@@ -12,7 +12,6 @@ public class UpdateMyUserAction extends Action{
     }
 
     // Methods:
-
     @Override
     public Object act() throws IOException {
         MainServer.getUsers().replace(me.getUsername(), me);
