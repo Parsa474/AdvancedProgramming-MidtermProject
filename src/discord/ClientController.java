@@ -100,13 +100,13 @@ public class ClientController {
                             if (mySocket.readBoolean()) {
                                 if (accept) {
                                     printer.printSuccessMessage("accept");
-                                    user.getFriendRequests().remove(index);
                                 } else {
                                     printer.printSuccessMessage("reject");
                                 }
                             } else {
                                 printer.printErrorMessage("not found username");
                             }
+                            user.getFriendRequests().remove(index);
                         }
                     } else printer.printErrorMessage("boundary");
                 } else printer.printErrorMessage("length");
