@@ -32,7 +32,9 @@ public class ClientHandler implements Runnable {
                     action = mySocket.readAction();
                     if (action instanceof LoginAction || (action instanceof SignUpAction && ((SignUpAction) action).getStage() == 4)) {
                         user = (Model) action.act();
-                        user.setStatus(Model.Status.Online);
+                        if (user != null) {
+                            user.setStatus(Model.Status.Online);
+                        }
                         mySocket.write(user);
                     } else {
                         mySocket.write(action.act());
