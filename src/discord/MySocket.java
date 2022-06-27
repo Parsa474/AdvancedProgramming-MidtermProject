@@ -65,4 +65,8 @@ public class MySocket {
     public boolean readBoolean() throws IOException, ClassNotFoundException {
         return (boolean) objectInputStream.readObject();
     }
+
+    public void flush() throws IOException {
+        objectOutputStream.flush();
+    }
 }

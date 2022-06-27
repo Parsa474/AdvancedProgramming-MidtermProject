@@ -23,14 +23,15 @@ public class ClientController {
         outer:
         while (true) {
             printer.printLoggedInMenu();
-            int command = MyScanner.getInt(1, 4);
-            mySocket.write(new updateRequestAction(user.getUsername()));
+            int command = MyScanner.getInt(1, 7);
+            mySocket.write(new UpdateRequestAction(user.getUsername()));
             user = mySocket.readModel();
             switch (command) {
                 case 1 -> sendFriendRequest();
                 case 2 -> sendRequestIndex();
                 case 3 -> printer.printList(user.getFriends());
-                case 4 -> {
+                case 6 -> chaneMyUserInfo();
+                case 7 -> {
                     mySocket.write(null);
                     user = null;
                     break outer;
@@ -74,7 +75,7 @@ public class ClientController {
     private void sendRequestIndex() {
         while (true) {
             if (user.getFriendRequests().size() == 0) {
-                System.out.println("nothing is here");
+                printer.println("Your friend request list is empty");
                 break;
             }
             printer.printList(user.getFriendRequests());
@@ -88,28 +89,28 @@ public class ClientController {
             Boolean accept = null;
             try {
                 if (inputs.length == 2) {
-                    int index = Character.getNumericValue(inputs[0]);
-                    if (index > 0 && index < user.getFriendRequests().size() + 1) {
-                        switch (inputs[1]) {
-                            case 'A' -> accept = true;
-                            case 'R' -> accept = false;
-                            default -> printer.printErrorMessage("format");
-                        }
-                        if (accept != null) {
-                            mySocket.write(new CheckFriendRequestsAction(user.getUsername(), index - 1, accept));
-                            if (mySocket.readBoolean()) {
-                                if (accept) {
-                                    printer.printSuccessMessage("accept");
-                                } else {
-                                    printer.printSuccessMessage("reject");
-                                }
+                    int index = Character.getNumericValue(inputs[0]) - 1;
+                    switch (inputs[1]) {
+                        case 'A' -> accept = true;
+                        case 'R' -> accept = false;
+                        default -> printer.printErrorMessage("format");
+                    }
+                    if (accept != null) {
+                        mySocket.write(new CheckFriendRequestsAction(user.getUsername(), index, accept));
+                        if (mySocket.readBoolean()) {
+                            if (accept) {
+                                printer.printSuccessMessage("accept");
                             } else {
-                                printer.printErrorMessage("not found username");
+                                printer.printSuccessMessage("reject");
                             }
-                            user.getFriendRequests().remove(index);
+                        } else {
+                            printer.printErrorMessage("not found username");
                         }
-                    } else printer.printErrorMessage("boundary");
+                        user.getFriendRequests().remove(index);
+                    }
                 } else printer.printErrorMessage("length");
+            } catch (IndexOutOfBoundsException e) {
+                printer.printErrorMessage("boundary");
             } catch (Exception e) {
                 printer.printErrorMessage("format");
             }
@@ -130,6 +131,57 @@ public class ClientController {
             }
         }).start();
     }
+
+    private void chaneMyUserInfo() throws IOException, ClassNotFoundException {
+        while (true) {
+            printer.println(user.toString());
+            printer.printChangeUserMenu();
+            int command = MyScanner.getInt(1, 5);
+            String newField = "";
+            SignUpAction changeAFieldAction = new SignUpAction(user.getUsername());
+            switch (command) {
+                case 1 -> {
+                    newField = receiveUsername(changeAFieldAction);
+                    if (newField == null) break;
+                    changeAFieldAction.setUsername(newField);
+                }
+                case 2 -> {
+                    newField = receivePassword(changeAFieldAction);
+                    if (newField == null) break;
+                    changeAFieldAction.setPassword(newField);
+                }
+                case 3 -> {
+                    newField = receiveEmail(changeAFieldAction);
+                    if (newField == null) break;
+                    changeAFieldAction.setEmail(newField);
+
+                }
+                case 4 -> {
+                    newField = receivePhoneNumber(changeAFieldAction);
+                    if (newField == null) break;
+                    changeAFieldAction.setPhoneNumber(newField);
+                }
+                case 5 -> {
+                    return;
+                }
+            }
+            if (newField != null) {
+                printer.println("The field was changed successfully!");
+                String username;
+                if (command == 1) {
+                    username = newField;
+                } else {
+                    username = user.getUsername();
+                }
+                mySocket.write(new UpdateRequestAction(username));
+                user = mySocket.readModel();
+                break;
+            } else {
+                printer.printErrorMessage("change fail");
+            }
+        }
+    }
+
 
     private boolean login() throws IOException, ClassNotFoundException {
         while (user == null) {
@@ -180,7 +232,8 @@ public class ClientController {
     private String receiveUsername(SignUpAction signUpAction) throws IOException, ClassNotFoundException {
         while (true) {
             printer.printGoBackMessage();
-            printer.printGetMessage("username");
+            if (user == null) printer.printGetMessage("username");
+            else printer.printGetMessage("new username");
             printer.printConditionMessage("username");
             String username = MyScanner.getLine();
             if ("".equals(username)) return null;

@@ -23,7 +23,7 @@ public class ClientHandler implements Runnable {
                 Action action;
                 while (user == null) {
                     action = mySocket.readAction();
-                    if (action instanceof LoginAction || (action instanceof SignUpAction && ((SignUpAction) action).getStage() == 4)) {
+                    if (action instanceof LoginAction || (action instanceof SignUpAction && ((SignUpAction) action).getStage() == 5)) {
                         user = (Model) action.act();
                         if (user != null) {
                             user.setStatus(Model.Status.Online);
@@ -35,16 +35,21 @@ public class ClientHandler implements Runnable {
                 }
                 while (true) {
                     action = mySocket.readAction();
-                    if (action != null) {       // for logging out
-                        mySocket.write(action.act());
-                    } else {
+                    if (action == null) {       // when logging out
                         user = null;
                         break;
+                    } else if (action instanceof SignUpAction && ((SignUpAction) action).getSubStage() == 1) {
+                        mySocket.write(action.act());
+                        user = MainServer.getUsers().get(((SignUpAction) action).getNewUsername());
+                        break;
+                    } else {
+                        mySocket.write(action.act());
                     }
                 }
             } catch (IOException | ClassNotFoundException e) {
                 clientHandlers.remove(this);
                 mySocket.closeEverything();
+                System.out.println("clientHandler got removed");
                 break;
             }
         }

@@ -4,6 +4,10 @@ import java.util.LinkedList;
 
 public class View {
 
+    public void println(String message) {
+        System.out.println(message);
+    }
+
     public void printInitialMenu() {
         System.out.println("1. login");
         System.out.println("2. sign up");
@@ -28,6 +32,7 @@ public class View {
                     System.err.println("this email is invalid (should have an '@' and a finish with a .example)");
             case "illegal character use" -> System.err.println("Do not use illegal characters!");
             case "main server" -> System.err.println("could not connect to the main server");
+            case "change fail" -> System.out.println("could not change the field, conditions not met");
             default -> System.err.println(error);
         }
     }
@@ -76,12 +81,23 @@ public class View {
         System.out.println("1. send a friend request");
         System.out.println("2. check friend request list");
         System.out.println("3. chat with a friend");
-        System.out.println("4. log out");
+        System.out.println("4. make a new server");
+        System.out.println("5. go to one of my servers");
+        System.out.println("6. change my user info");
+        System.out.println("7. log out");
     }
 
     public void printList(LinkedList<String> list) {
         for (int i = 0; i < list.size(); i++) {
             System.out.printf("%d. %s\n", i + 1, list.get(i));
         }
+    }
+
+    public void printChangeUserMenu() {
+        System.out.println("1. change my username");
+        System.out.println("2. change my password");
+        System.out.println("3. change my email");
+        System.out.println("4. change my phone number");
+        System.out.println("5. go back");
     }
 }

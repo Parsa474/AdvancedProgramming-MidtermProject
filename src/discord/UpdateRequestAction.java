@@ -1,10 +1,10 @@
 package discord;
 
-public class updateRequestAction extends Action {
+public class UpdateRequestAction extends Action {
 
     private final String username;
 
-    public updateRequestAction(String username) {
+    public UpdateRequestAction(String username) {
         this.username = username;
     }
 

@@ -63,7 +63,7 @@ public class MainServer {
     }
 
     public static Model updateServerAndGetUser(String username) {
-        users = readUsers();
+        //users.replace(username, readUser(new File("assets\\users\\" + username.concat(".bin"))));
         return users.get(username);
     }
 
@@ -126,6 +126,16 @@ public class MainServer {
             System.out.println("I/O error occurred!");
         } finally {
             handleClosingOutputs(fileOut, out);
+        }
+    }
+
+    public static void deleteUserFromDataBase(String username) {
+        String path = "assets\\users\\" + username.concat(".bin");
+        File wantToDeleteFile = new File(path);
+        if (wantToDeleteFile.delete()) {
+            System.out.println("Deleted successfully");
+        } else {
+            System.out.println("Failed to delete!");
         }
     }
 
