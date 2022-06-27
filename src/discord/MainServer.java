@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainServer {
+    // Fields:
     private static Map<String, Model> users = Collections.synchronizedMap(new HashMap<>());
     private final ServerSocket serverSocket;
     private final ExecutorService executorService;
@@ -70,15 +71,15 @@ public class MainServer {
         return users.get(username);
     }
 
-    public static LinkedList<String> updatingFriendRequests(String username) {
-        users = readUsers();
-        return users.get(username).getFriendRequests();
-    }
-
-    public static LinkedList<String> updatingFriends(String username) {
-        users = readUsers();
-        return users.get(username).getFriends();
-    }
+//    public static LinkedList<String> updatingFriendRequests(String username) {
+//        users = readUsers();
+//        return users.get(username).getFriendRequests();
+//    }
+//
+//    public static LinkedList<String> updatingFriends(String username) {
+//        users = readUsers();
+//        return users.get(username).getFriends();
+//    }
 
     public static Map<String, Model> getUsers() {
         return users;

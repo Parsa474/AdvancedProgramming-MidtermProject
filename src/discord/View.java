@@ -77,7 +77,10 @@ public class View {
         System.out.println("1. send a friend request");
         System.out.println("2. check friend request list");
         System.out.println("3. chat with a friend");
-        System.out.println("4. log out");
+        System.out.println("4. make a new server");
+        System.out.println("5. go to one of my servers");
+        System.out.println("6. change my user info");
+        System.out.println("7. log out");
     }
 
     public void printList(LinkedList<String> list) {

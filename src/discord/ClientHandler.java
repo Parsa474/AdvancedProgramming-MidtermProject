@@ -31,7 +31,7 @@ public class ClientHandler implements Runnable {
                 while (user == null) {
                     action = mySocket.readAction();
                     if (action instanceof LoginAction || (action instanceof SignUpAction && ((SignUpAction) action).getStage() == 4)) {
-                        user = (Model) action.act();
+                        user = (Model) action.act();  // here action is SignUpAction or LoginAction
                         if (user != null) {
                             user.setStatus(Model.Status.Online);
                         }

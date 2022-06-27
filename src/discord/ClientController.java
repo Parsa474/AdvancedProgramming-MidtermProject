@@ -76,7 +76,7 @@ public class ClientController {
     private void sendRequestIndex() {
         while (true) {
             if (user.getFriendRequests().size() == 0) {
-                System.out.println("nothing is here");
+                printer.println("your friend request list is empty.");
                 break;
             }
             printer.printList(user.getFriendRequests());
@@ -90,15 +90,16 @@ public class ClientController {
             Boolean accept = null;
             try {
                 if (inputs.length == 2) {
-                    int index = Character.getNumericValue(inputs[0]);
-                    if (index > 0 && index < user.getFriendRequests().size() + 1) {
+                    int index = Integer.parseInt(String.valueOf(inputs[0])) - 1;
+//                    int index = Character.getNumericValue(inputs[0]) - 1;
+                    if (index >= 0 && index < user.getFriendRequests().size()) {
                         switch (inputs[1]) {
                             case 'A' -> accept = true;
                             case 'R' -> accept = false;
                             default -> printer.printErrorMessage("format");
                         }
                         if (accept != null) {
-                            mySocket.write(new CheckFriendRequestsAction(user.getUsername(), index - 1, accept));
+                            mySocket.write(new CheckFriendRequestsAction(user.getUsername(), index, accept));
                             if (mySocket.readBoolean()) {
                                 if (accept) {
                                     printer.printSuccessMessage("accept");
@@ -110,8 +111,14 @@ public class ClientController {
                             }
                             user.getFriendRequests().remove(index);
                         }
-                    } else printer.printErrorMessage("boundary");
-                } else printer.printErrorMessage("length");
+                    } else {
+                        printer.printErrorMessage("boundary");
+                    }
+                } else {
+                    printer.printErrorMessage("length");
+                }
+            } catch (IndexOutOfBoundsException e) {
+                printer.printErrorMessage("boundary");
             } catch (Exception e) {
                 printer.printErrorMessage("format");
             }
@@ -146,8 +153,12 @@ public class ClientController {
                 if (user != null) {
                     printer.printSuccessMessage("login");
                     return true;
-                } else printer.printErrorMessage("login");
-            } else break;
+                } else {
+                    printer.printErrorMessage("login");
+                }
+            } else {
+                break;
+            }
         }
         return false;
     }
@@ -157,16 +168,24 @@ public class ClientController {
             SignUpAction signUpAction = new SignUpAction();
             String username;
             username = receiveUsername(signUpAction);
-            if (username == null) return false;
+            if (username == null) {
+                return false;
+            }
             String password;
             password = receivePassword(signUpAction);
-            if (password == null) return false;
+            if (password == null) {
+                return false;
+            }
             String email;
             email = receiveEmail(signUpAction);
-            if (email == null) return false;
+            if (email == null) {
+                return false;
+            }
             String phoneNumber;
             phoneNumber = receivePhoneNumber(signUpAction);
-            if (phoneNumber == null) return false;
+            if (phoneNumber == null) {
+                return false;
+            }
             signUpAction.finalizeStage();
             mySocket.write(signUpAction);
             Model newUser = mySocket.readModel();
@@ -185,13 +204,16 @@ public class ClientController {
             printer.printGetMessage("username");
             printer.printConditionMessage("username");
             String username = MyScanner.getLine();
-            if ("".equals(username)) return null;
-            else {
+            if ("".equals(username)) {
+                return null;
+            } else {
                 signUpAction.setUsername(username);
                 mySocket.write(signUpAction);
                 if (mySocket.readBoolean()) {
                     return username;
-                } else printer.printErrorMessage("username");
+                } else {
+                    printer.printErrorMessage("username");
+                }
             }
         }
     }
@@ -217,12 +239,16 @@ public class ClientController {
             printer.printCancelMessage();
             printer.printGetMessage("email");
             String email = MyScanner.getLine();
-            if ("".equals(email)) return null;
+            if ("".equals(email)) {
+                return null;
+            }
             signUpAction.setEmail(email);
             mySocket.write(signUpAction);
             if (mySocket.readBoolean()) {
                 return email;
-            } else printer.printErrorMessage("email");
+            } else {
+                printer.printErrorMessage("email");
+            }
         }
     }
 
@@ -231,12 +257,16 @@ public class ClientController {
             printer.printCancelMessage();
             printer.printGetMessage("phone number");
             String phoneNumber = MyScanner.getLine();
-            if ("".equals(phoneNumber)) return null;
+            if ("".equals(phoneNumber)) {
+                return null;
+            }
             signUpAction.setPhoneNumber(phoneNumber);
             mySocket.write(signUpAction);
             if (mySocket.readBoolean()) {
                 return phoneNumber;
-            } else printer.printErrorMessage("illegal character use");
+            } else {
+                printer.printErrorMessage("illegal character use");
+            }
         }
     }
 
