@@ -63,16 +63,8 @@ public class Model implements Serializable {
         return friendRequests;
     }
 
-    public void setFriendRequests(LinkedList<String> friendRequests) {
-        this.friendRequests = friendRequests;
-    }
-
     public LinkedList<String> getFriends() {
         return friends;
-    }
-
-    public void setFriends(LinkedList<String> friends) {
-        this.friends = friends;
     }
 
     public Status getStatus() {

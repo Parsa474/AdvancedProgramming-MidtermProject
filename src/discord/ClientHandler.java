@@ -30,15 +30,17 @@ public class ClientHandler implements Runnable {
                 Action action;
                 while (user == null) {
                     action = mySocket.readAction();
-                    user = (Model) action.act(); // here action is SignUpAction or LoginAction
-                    mySocket.getObjectOutputStream().reset();
-                    mySocket.write(user);
+                    if (action instanceof LoginAction || (action instanceof SignUpAction && ((SignUpAction) action).getStage() == 4)) {
+                        user = (Model) action.act();
+                        user.setStatus(Model.Status.Online);
+                        mySocket.write(user);
+                    } else {
+                        mySocket.write(action.act());
+                    }
                 }
                 while (true) {
                     action = mySocket.readAction();
-                    // for logging out
-                    if (action != null) {
-                        mySocket.getObjectOutputStream().reset();
+                    if (action != null) {       // for logging out
                         mySocket.write(action.act());
                     } else {
                         user = null;
@@ -61,14 +63,14 @@ public class ClientHandler implements Runnable {
 
     public void broadcastMessage(String messageToSend) {
         for (ClientHandler clientHandler : clientHandlers) {
-        try {
-            if (!clientHandler.clientUsername.equals(clientUsername)) {
-            objectOutputStream.writeObject(new Message(messageToSend));
-            mySocket.write(messageToSend);
+            try {
+                if (!clientHandler.user.getUsername().equals(user.getUsername())) {
+                    mySocket.write(messageToSend);
+                    mySocket.write(messageToSend);
+                }
+            } catch (IOException e) {
+                removeThisAndCloseEverything();
             }
-        } catch (IOException e) {
-            removeThisAndCloseEverything();
-        }
         }
     }*/
 }

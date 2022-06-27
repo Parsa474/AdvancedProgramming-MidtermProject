@@ -13,26 +13,23 @@ public class View {
 
     public void printErrorMessage(String error) {
         switch (error) {
-            case "format" -> System.out.println("Invalid format!");
-            case "illegal character use" -> System.out.println("Do not use illegal characters!");
+            //case "file not found" -> System.err.println("file not found!");
+            //case "IO" -> System.err.println("I/O error occurred!");
+            case "yourself" -> System.err.println("You can't send a friend request to yourself!");
+            case "already friend" -> System.err.println("This user is already your friend!");
+            case "friend request" -> System.err.println("invalid username or friend request already sent!");
+            case "not found username" -> System.err.println("A user by this username was not found!");
+            case "boundary" -> System.err.println("Out of boundary index used!");
+            case "length" -> System.err.println("Invalid input length");
+            case "login" -> System.err.println("A username by this password does not exist!");
+            case "username" ->
+                    System.err.println("You either didn't follow the specified format or this username is already taken!");
+            case "format" -> System.err.println("Invalid format!");
             case "email" ->
-                    System.out.println("this email is invalid (should have an '@' and a finish with a .example)");
-            case "file not found" -> System.out.println("file not found!");
-            case "IO" -> System.out.println("I/O error occurred!");
-            case "not found username" -> System.out.println("A user by this username was not found!");
-            case "login" -> System.out.println("A username by this password does not exist!");
-            case "list" -> {
-                System.out.println("invalid input, you either entered a non-number character or didn't follow the format");
-                System.out.println("try again!");
-            }
-            case "main server" -> System.out.println("could not connect to the main server");
-            case "already friend" -> System.out.println("This user is already your friend!");
-            case "yourself" -> System.out.println("You can't send a friend request to yourself!");
-            case "friend request" -> System.out.println("invalid username or friend request already sent!");
-            case "boundary" -> System.out.println("Out of boundary index used!");
-            case "repeat" -> System.out.println("You can't reject an already accepted request!");
-            case "length" -> System.out.println("Invalid input length");
-            default -> System.out.println(error);
+                    System.err.println("this email is invalid (should have an '@' and a finish with a .example)");
+            case "illegal character use" -> System.err.println("Do not use illegal characters!");
+            case "main server" -> System.err.println("could not connect to the main server");
+            default -> System.err.println(error);
         }
     }
 
@@ -40,19 +37,19 @@ public class View {
         System.out.println("(press enter to go back)");
     }
 
+    public void printCancelMessage() {
+        System.out.println("press enter to cancel the process");
+    }
+
+
     public void printGetMessage(String field) {
         switch (field) {
             case "req" -> System.out.println("Enter the username of the user you want to send a friend request to");
-            case "index" -> {
-                System.out.println("Enter the index you want to accept followed by 'A' or reject followed by 'R'");
-                System.out.println("Enter 0 to go back");
-            }
-            case "accept" ->
-                    System.out.println("Enter the numbers of the friend requests you want to accept, enter 0 to select none");
-            case "reject" -> System.out.println("follow the same manner for rejecting requests in a new line");
+            case "index" ->
+                    System.out.println("Enter the index you want to accept followed by 'A' or reject followed by 'R'");
             default -> {
                 System.out.println("enter your " + field);
-                if (field.equals("phone number")) System.out.println("(optional, press Enter if you want to skip)");
+                if (field.equals("phone number")) System.out.println("(optional, simply enter 0 if you want to skip)");
             }
         }
     }
@@ -61,11 +58,8 @@ public class View {
         switch (field) {
             case "username" ->
                     System.out.println("should only consist English letters/numbers and be of a minimum length of 6 characters");
-            case "taken username" -> System.out.println("already taken username! Please choose another username");
             case "password" ->
                     System.out.println("should consist of at least 1 capital letter, 1 small letter, 1 digit, and at least be of a length of 8");
-            case "friend request list" ->
-                    System.out.println("the numbers should be seperated by 1 space, press Enter when finished");
         }
     }
 

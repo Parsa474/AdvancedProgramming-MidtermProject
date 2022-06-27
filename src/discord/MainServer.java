@@ -7,15 +7,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainServer {
-    // Fields:
-    //public static HashMap<String, Model> users = new HashMap<>();
     private static Map<String, Model> users = Collections.synchronizedMap(new HashMap<>());
     private final ServerSocket serverSocket;
+    private final ExecutorService executorService;
 
     // Constructors:
     public MainServer(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
         users = readUsers();
+        executorService = Executors.newCachedThreadPool();
     }
 
     // Methods:
@@ -65,10 +65,10 @@ public class MainServer {
         return null;
     }
 
-    /*public static Model updateServerAndReadUser(String username) {
+    public static Model updateServerAndGetUser(String username) {
         users = readUsers();
         return users.get(username);
-    }*/
+    }
 
     public static LinkedList<String> updatingFriendRequests(String username) {
         users = readUsers();
@@ -82,10 +82,6 @@ public class MainServer {
 
     public static Map<String, Model> getUsers() {
         return users;
-    }
-
-    public static void updateUsers() {
-//        users = readUsers();
     }
 
     private static void handleClosingInputs(FileInputStream fileIn, ObjectInputStream in) {
@@ -103,7 +99,6 @@ public class MainServer {
 
     public void startServer() {
         try {
-            ExecutorService executorService = Executors.newCachedThreadPool();
             while (!serverSocket.isClosed()) {
 //                Socket socket = serverSocket.accept();
                 MySocket newConnectionSocket = new MySocket(serverSocket.accept());
@@ -129,11 +124,6 @@ public class MainServer {
     public static void signUpUser(Model newUser) {
         users.put(newUser.getUsername(), newUser);
         updateDatabase(newUser);
-    }
-
-    public static void updateUserInfo(Model user) {
-        MainServer.users.replace(user.getUsername(), user);
-        updateDatabase(user);
     }
 
     public static void updateDatabase(Model user) {

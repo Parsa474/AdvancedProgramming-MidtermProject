@@ -2,8 +2,6 @@ package discord;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class ClientController {
     // Fields:
@@ -23,22 +21,17 @@ public class ClientController {
         return user.toString();
     }
 
-    private void start() throws IOException {
+    private void start() throws IOException, ClassNotFoundException {
         outer:
         while (true) {
             printer.printLoggedInMenu();
             int command = MyScanner.getInt(1, 4);
+            mySocket.write(new updateRequestAction(user.getUsername()));
+            user = mySocket.readModel();
             switch (command) {
                 case 1 -> sendFriendRequest();
-                case 2 -> {
-                    user.setFriendRequests(MainServer.updatingFriendRequests(user.getUsername()));
-                    sendRequestIndex();
-                }
-                case 3 -> {
-                    user.setFriends(MainServer.updatingFriends(user.getUsername()));
-//                    printer.printList(user.getFriendRequests());
-                    printer.printList(user.getFriends());
-                }
+                case 2 -> sendRequestIndex();
+                case 3 -> printer.printList(user.getFriends());
                 case 4 -> {
                     mySocket.write(null);
                     user = null;
@@ -82,38 +75,43 @@ public class ClientController {
 
     private void sendRequestIndex() {
         while (true) {
+            if (user.getFriendRequests().size() == 0) {
+                System.out.println("nothing is here");
+                break;
+            }
             printer.printList(user.getFriendRequests());
             printer.printGetMessage("index");
+            printer.printGoBackMessage();
             String input = MyScanner.getLine();
+            if ("".equals(input)) {
+                return;
+            }
             char[] inputs = input.toCharArray();
             Boolean accept = null;
             try {
-                switch (inputs.length) {
-                    case 1 -> {
-                        if (inputs[0] == '0') return;
-                        else printer.printErrorMessage("format");
-                    }
-                    case 2 -> {
-                        int index = Character.getNumericValue(inputs[0]);
-                        if (index > 0 && index < user.getFriendRequests().size() + 1) {
-                            switch (inputs[1]) {
-                                case 'A' -> accept = true;
-                                case 'R' -> accept = false;
-                                default -> printer.printErrorMessage("format");
-                            }
-                            if (accept != null) {
-                                mySocket.write(new CheckFriendRequestsAction(user.getUsername(), index - 1, accept));
+                if (inputs.length == 2) {
+                    int index = Character.getNumericValue(inputs[0]);
+                    if (index > 0 && index < user.getFriendRequests().size() + 1) {
+                        switch (inputs[1]) {
+                            case 'A' -> accept = true;
+                            case 'R' -> accept = false;
+                            default -> printer.printErrorMessage("format");
+                        }
+                        if (accept != null) {
+                            mySocket.write(new CheckFriendRequestsAction(user.getUsername(), index - 1, accept));
+                            if (mySocket.readBoolean()) {
                                 if (accept) {
                                     printer.printSuccessMessage("accept");
+                                    user.getFriendRequests().remove(index);
                                 } else {
                                     printer.printSuccessMessage("reject");
                                 }
-                                user = mySocket.readModel();
+                            } else {
+                                printer.printErrorMessage("not found username");
                             }
-                        } else printer.printErrorMessage("boundary");
-                    }
-                    default -> printer.printErrorMessage("length");
-                }
+                        }
+                    } else printer.printErrorMessage("boundary");
+                } else printer.printErrorMessage("length");
             } catch (Exception e) {
                 printer.printErrorMessage("format");
             }
@@ -122,11 +120,11 @@ public class ClientController {
 
     public void listenForMessage() {
         new Thread(() -> {
-            String successMessage;
+            String message;
             while (mySocket.getConnectionSocket().isConnected()) {
                 try {
-                    successMessage = mySocket.readString();
-                    System.out.println(successMessage);
+                    message = mySocket.readString();
+                    System.out.println(message);
                 } catch (IOException | ClassNotFoundException e) {
                     mySocket.closeEverything();
                     break;
@@ -148,106 +146,98 @@ public class ClientController {
                 if (user != null) {
                     printer.printSuccessMessage("login");
                     return true;
-                }
+                } else printer.printErrorMessage("login");
             } else break;
         }
         return false;
     }
 
-    private void signUp() throws IOException, ClassNotFoundException {
-        Model newUser = receiveUser();
-        if (newUser != null) {
-            mySocket.write(new SignUpAction(newUser));
-            user = mySocket.readModel();
-            printer.printSuccessMessage("signUp");
-            start();
-        } else {
-            printer.printErrorMessage("couldn't signup. null user returned");
+    private boolean signUp() throws IOException, ClassNotFoundException {
+        while (user == null) {
+            SignUpAction signUpAction = new SignUpAction();
+            String username;
+            username = receiveUsername(signUpAction);
+            if (username == null) return false;
+            String password;
+            password = receivePassword(signUpAction);
+            if (password == null) return false;
+            String email;
+            email = receiveEmail(signUpAction);
+            if (email == null) return false;
+            String phoneNumber;
+            phoneNumber = receivePhoneNumber(signUpAction);
+            if (phoneNumber == null) return false;
+            signUpAction.finalizeStage();
+            mySocket.write(signUpAction);
+            Model newUser = mySocket.readModel();
+            if (newUser != null) {
+                printer.printSuccessMessage("signUp");
+                user = newUser;
+                return true;
+            }
         }
+        return false;
     }
 
-    private Model receiveUser() {
-        String username;
-        String password;
-        String email;
-        String phoneNumber;
-        username = receiveUsername();
-        if (username == null) return null;
-        password = receivePassword();
-        email = receiveEmail();
-        phoneNumber = receivePhoneNumber();
-        return new Model(username, password, email, phoneNumber);
-    }
-
-    private String receiveUsername() {
+    private String receiveUsername(SignUpAction signUpAction) throws IOException, ClassNotFoundException {
         while (true) {
             printer.printGoBackMessage();
             printer.printGetMessage("username");
             printer.printConditionMessage("username");
-            String input = MyScanner.getLine();
-            if ("".equals(input)) return null;
+            String username = MyScanner.getLine();
+            if ("".equals(username)) return null;
             else {
-                if (!MainServer.getUsers().containsKey(input)) {
-                    String regex = "^[A-Za-z0-9]{6,}$";
-                    if (isMatched(regex, input)) {
-                        return input;
-                    } else {
-                        printer.printErrorMessage("format");
-                    }
-                } else {
-                    printer.printConditionMessage("taken username");
-                }
+                signUpAction.setUsername(username);
+                mySocket.write(signUpAction);
+                if (mySocket.readBoolean()) {
+                    return username;
+                } else printer.printErrorMessage("username");
             }
         }
     }
 
-    private String receivePassword() {
+    private String receivePassword(SignUpAction signUpAction) throws IOException, ClassNotFoundException {
         while (true) {
+            printer.printCancelMessage();
             printer.printGetMessage("password");
             printer.printConditionMessage("password");
-            String input = MyScanner.getLine();
-            String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d+]{8,}$";
-            if (isMatched(regex, input)) {
-                return input;
+            String password = MyScanner.getLine();
+            signUpAction.setPassword(password);
+            mySocket.write(signUpAction);
+            if (mySocket.readBoolean()) {
+                return password;
             } else {
                 printer.printErrorMessage("format");
             }
         }
     }
 
-    private String receiveEmail() {
+    private String receiveEmail(SignUpAction signUpAction) throws IOException, ClassNotFoundException {
         while (true) {
+            printer.printCancelMessage();
             printer.printGetMessage("email");
-            String input = MyScanner.getLine();
-            try {
-                String[] inputs = input.split("@");
-                String[] afterAtSign = inputs[1].split("\\.");
-                String reg = "^[A-Za-z0-9]*$";
-                if (isMatched(reg, inputs[0]) && isMatched(reg, afterAtSign[0]) && isMatched(reg, afterAtSign[1])) {
-                    return input;
-                } else printer.printErrorMessage("illegal character use");
-            } catch (Exception e) {
-                printer.printErrorMessage("email");
-            }
+            String email = MyScanner.getLine();
+            if ("".equals(email)) return null;
+            signUpAction.setEmail(email);
+            mySocket.write(signUpAction);
+            if (mySocket.readBoolean()) {
+                return email;
+            } else printer.printErrorMessage("email");
         }
     }
 
-    private String receivePhoneNumber() {
+    private String receivePhoneNumber(SignUpAction signUpAction) throws IOException, ClassNotFoundException {
         while (true) {
+            printer.printCancelMessage();
             printer.printGetMessage("phone number");
-            String input = MyScanner.getLine();
-            if ("".equals(input)) return null;
-            String reg = "^[0-9]{11,}$";
-            if (isMatched(reg, input)) {
-                return input;
+            String phoneNumber = MyScanner.getLine();
+            if ("".equals(phoneNumber)) return null;
+            signUpAction.setPhoneNumber(phoneNumber);
+            mySocket.write(signUpAction);
+            if (mySocket.readBoolean()) {
+                return phoneNumber;
             } else printer.printErrorMessage("illegal character use");
         }
-    }
-
-    private static boolean isMatched(String regex, String input) {
-        Pattern pt = Pattern.compile(regex);
-        Matcher mt = pt.matcher(input);
-        return mt.matches();
     }
 
     public static void main(String[] args) {
@@ -265,7 +255,11 @@ public class ClientController {
                             clientController.start();
                         }
                     }
-                    case 2 -> clientController.signUp();
+                    case 2 -> {
+                        if (clientController.signUp()) {
+                            clientController.start();
+                        }
+                    }
                     case 3 -> {
                         clientController.mySocket.closeEverything();
                         break outer;
