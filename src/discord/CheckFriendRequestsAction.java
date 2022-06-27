@@ -14,6 +14,9 @@ public class CheckFriendRequestsAction extends Action {
 
     @Override
     public Object act() {
+        if (!MainServer.getUsers().containsKey(username)) {
+            return false;
+        }
         Model user = MainServer.getUsers().get(username);
         String requesterUsername = user.getFriendRequests().get(index);
         Model requester = MainServer.getUsers().get(requesterUsername);
@@ -24,6 +27,6 @@ public class CheckFriendRequestsAction extends Action {
         }
         user.getFriendRequests().remove(index);
         MainServer.updateDatabase(user);
-        return user;
+        return true;
     }
 }

@@ -42,6 +42,7 @@ public class MySocket {
     }
 
     public void write(Object object) throws IOException {
+        objectOutputStream.reset();
         objectOutputStream.writeObject(object);
     }
 
@@ -63,9 +64,5 @@ public class MySocket {
 
     public boolean readBoolean() throws IOException, ClassNotFoundException {
         return (boolean) objectInputStream.readObject();
-    }
-
-    public ObjectOutputStream getObjectOutputStream() {
-        return objectOutputStream;
     }
 }

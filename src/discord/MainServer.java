@@ -61,14 +61,9 @@ public class MainServer {
         return null;
     }
 
-    public static LinkedList<String> updateServerAndGetFriendRequestsList(String username) {
+    public static Model updateServerAndGetUser(String username) {
         users = readUsers();
-        return users.get(username).getFriendRequests();
-    }
-
-    public static LinkedList<String> updateServerAndGetFriendsList(String username) {
-        users = readUsers();
-        return users.get(username).getFriends();
+        return users.get(username);
     }
 
     public static Map<String, Model> getUsers() {
