@@ -1,7 +1,5 @@
 package discord;
 
-import java.io.IOException;
-
 public class updateRequestAction extends Action {
 
     private final String username;

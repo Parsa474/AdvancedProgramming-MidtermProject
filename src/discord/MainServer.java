@@ -9,13 +9,14 @@ import java.util.concurrent.Executors;
 
 public class MainServer {
 
-    //public static HashMap<String, Model> users = new HashMap<>();
     private static Map<String, Model> users = Collections.synchronizedMap(new HashMap<>());
     private final ServerSocket serverSocket;
+    private final ExecutorService executorService;
 
     public MainServer(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
         users = readUsers();
+        executorService = Executors.newCachedThreadPool();
     }
 
     private static void makeDirectory(String path) {
@@ -85,7 +86,6 @@ public class MainServer {
 
     public void startServer() {
         try {
-            ExecutorService executorService = Executors.newCachedThreadPool();
             while (!serverSocket.isClosed()) {
                 Socket socket = serverSocket.accept();
                 System.out.println("A new client has connected");

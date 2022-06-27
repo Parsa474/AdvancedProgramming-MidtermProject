@@ -118,11 +118,11 @@ public class ClientController {
 
     public void listenForMessage() {
         new Thread(() -> {
-            String successMessage;
+            String message;
             while (mySocket.getConnectionSocket().isConnected()) {
                 try {
-                    successMessage = mySocket.readString();
-                    System.out.println(successMessage);
+                    message = mySocket.readString();
+                    System.out.println(message);
                 } catch (IOException | ClassNotFoundException e) {
                     mySocket.closeEverything();
                     break;
