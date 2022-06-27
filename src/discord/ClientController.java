@@ -2,6 +2,9 @@ package discord;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ClientController {
     // Fields:
@@ -25,14 +28,14 @@ public class ClientController {
         outer:
         while (true) {
             printer.printLoggedInMenu();
-            int command = MyScanner.getInt(1, 4);
+            int command = MyScanner.getInt(1, 7);
             mySocket.write(new updateRequestAction(user.getUsername()));
             user = mySocket.readModel();
             switch (command) {
                 case 1 -> sendFriendRequest();
                 case 2 -> sendRequestIndex();
-                case 3 -> printer.printList(user.getFriends());
-                case 4 -> {
+                case 3 -> privateChat();
+                case 7 -> {
                     mySocket.write(null);
                     user = null;
                     break outer;
@@ -103,6 +106,9 @@ public class ClientController {
                             if (mySocket.readBoolean()) {
                                 if (accept) {
                                     printer.printSuccessMessage("accept");
+                                    String newFriend = user.getFriendRequests().get(index);
+//                                    user.getIsInChat().put(newFriend, false);
+//                                    user.getPrivateChats().put(newFriend, new ArrayList<String>());
                                 } else {
                                     printer.printSuccessMessage("reject");
                                 }
@@ -125,19 +131,86 @@ public class ClientController {
         }
     }
 
-    public void listenForMessage() {
-        new Thread(() -> {
-            String message;
-            while (mySocket.getConnectionSocket().isConnected()) {
-                try {
-                    message = mySocket.readString();
-                    System.out.println(message);
-                } catch (IOException | ClassNotFoundException e) {
-                    mySocket.closeEverything();
-                    break;
+    private Runnable listenForMessage() {
+        return new Runnable() {
+            private boolean exit = false;
+            @Override
+            public void run() {
+                Object inObject;
+                while (mySocket.getConnectionSocket().isConnected() && !exit) {
+                    try {
+                        inObject = mySocket.read();
+                        if (inObject instanceof String) {
+                            printer.println((String) inObject);
+                        } else if (inObject instanceof Boolean) {
+                            if ((Boolean) inObject) { // seen by the friend
+                                printer.println("(seen)");
+                            }
+                        }
+                    } catch (IOException | ClassNotFoundException e) {
+                        mySocket.closeEverything();
+                        break;
+                    }
                 }
             }
-        }).start();
+
+            public void shutdown() {
+                exit = true;
+            }
+        };
+    }
+
+    private void privateChat() {
+        // selecting privateChat
+        printer.printList(user.getFriends());
+        printer.println("select the chat. enter 0 to go back");
+        int friendIndex = MyScanner.getInt(0, user.getFriends().size()) - 1;
+        if (friendIndex == -1) {
+            return;
+        }
+        String friendName = user.getFriends().get(friendIndex);
+        user.getIsInChat().replace(friendName, true);
+        updateUserOnServer();
+        //printing previous messages
+        printer.printList(user.getPrivateChats().get(friendName));
+
+        // receiving messages
+//        ExecutorService executorService = Executors.newCachedThreadPool();
+        MessageListener messageListener = new MessageListener(mySocket, printer);
+        Thread listener = new Thread(messageListener);
+        listener.start();
+//        executorService.execute(listener);
+
+        // sending message
+        printer.println("enter \"#exit\" to exit the chat");
+        while (true) {
+            String message = MyScanner.getLine();
+            if (message.equals("#exit")) {
+                break;
+            }
+            try {
+                mySocket.write(new ChatAction(user.getUsername(), message, friendName));
+            } catch (IOException e) {
+                printer.printErrorMessage("IO");
+            }
+        }
+//        executorService.shutdownNow();
+//        listener.interrupt();
+        messageListener.shutdown();
+//        if (listener.isAlive()) {
+//            printer.println("exiting from chat!!");
+//        }
+        user.getIsInChat().replace(friendName, false);
+        updateUserOnServer();
+    }
+
+    private void updateUserOnServer() {
+        try {
+            mySocket.write(new UpdateMyUserAction(user));
+            mySocket.readBoolean(); // no usage. just for making connection free
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     private boolean login() throws IOException, ClassNotFoundException {
@@ -301,7 +374,10 @@ public class ClientController {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         } catch (Exception e) {
-            if (clientController != null) clientController.mySocket.closeEverything();
+            e.printStackTrace();
+            if (clientController != null) {
+                clientController.mySocket.closeEverything();
+            }
         }
     }
 }

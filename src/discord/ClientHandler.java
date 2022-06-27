@@ -22,6 +22,16 @@ public class ClientHandler implements Runnable {
     }
 
     // Methods:
+    // Getter Methods:
+    public Model getUser() {
+        return user;
+    }
+
+    public MySocket getMySocket() {
+        return mySocket;
+    }
+
+    // Other Methods:
     @Override
     public void run() {
         //outer:

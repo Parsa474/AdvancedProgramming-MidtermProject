@@ -1,5 +1,7 @@
 package discord;
 
+import java.util.ArrayList;
+
 public class CheckFriendRequestsAction extends Action {
 
     private final String username;
@@ -23,6 +25,10 @@ public class CheckFriendRequestsAction extends Action {
         if (accept) {
             user.getFriends().add(requesterUsername);
             requester.getFriends().add(username);
+            user.getIsInChat().put(requesterUsername, false);
+            user.getPrivateChats().put(requesterUsername, new ArrayList<String>());
+            requester.getIsInChat().put(username, false);
+            requester.getPrivateChats().put(username, new ArrayList<String>());
             MainServer.updateDatabase(requester);
         }
         user.getFriendRequests().remove(index);

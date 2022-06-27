@@ -14,7 +14,7 @@ public class View {
     public void printErrorMessage(String error) {
         switch (error) {
             //case "file not found" -> System.err.println("file not found!");
-            //case "IO" -> System.err.println("I/O error occurred!");
+            case "IO" -> System.err.println("I/O error occurred!");
             case "yourself" -> System.err.println("You can't send a friend request to yourself!");
             case "already friend" -> System.err.println("This user is already your friend!");
             case "friend request" -> System.err.println("invalid username or friend request already sent!");
@@ -86,6 +86,12 @@ public class View {
     public void printList(LinkedList<String> list) {
         for (int i = 0; i < list.size(); i++) {
             System.out.printf("%d. %s\n", i + 1, list.get(i));
+        }
+    }
+
+    public void printList(ArrayList<String> list) {
+        for (String s : list) {
+            System.out.println(s);
         }
     }
 

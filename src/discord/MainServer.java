@@ -67,7 +67,7 @@ public class MainServer {
     }
 
     public static Model updateServerAndGetUser(String username) {
-        users = readUsers();
+//        users = readUsers();
         return users.get(username);
     }
 
