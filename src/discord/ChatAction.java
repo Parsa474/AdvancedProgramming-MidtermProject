@@ -47,27 +47,31 @@ public class ChatAction extends Action{
     // Other Methods:
     @Override
     public Object act() throws IOException {
-        // updating database and server
-        Model senderUser = MainServer.getUsers().get(sender);
-        senderUser.getPrivateChats().get(receiver).add(message); // should be checked !!!
-        Model receiverUser = MainServer.getUsers().get(receiver);
-        receiverUser.getPrivateChats().get(sender).add(message);
-        MainServer.updateDatabase(senderUser);
-        MainServer.updateDatabase(receiverUser);
+        if (!message.equals(sender + ": #exit")) {
+            // updating database and server
+            Model senderUser = MainServer.getUsers().get(sender);
+            senderUser.getPrivateChats().get(receiver).add(message); // should be checked !!!
+            Model receiverUser = MainServer.getUsers().get(receiver);
+            receiverUser.getPrivateChats().get(sender).add(message);
+            MainServer.updateDatabase(senderUser);
+            MainServer.updateDatabase(receiverUser);
 
-        // sending message from socket if the receiver is online and in the private chat
-        for (ClientHandler c : clientHandlers) {
-            Model userOfClientHandler = c.getUser();
-            if (userOfClientHandler != null) {
-                if (receiver.equals(userOfClientHandler.getUsername())) {
-                    userOfClientHandler = MainServer.getUsers().get(userOfClientHandler.getUsername());  // testtttttttt
-                    if (userOfClientHandler.getIsInChat().get(sender)) {
-                        c.getMySocket().write(message); // we can also write "this" object
-                        return true;  //seen by the receiver in the moment
+            // sending message from socket if the receiver is online and in the private chat
+            for (ClientHandler c : clientHandlers) {
+                Model userOfClientHandler = c.getUser();
+                if (userOfClientHandler != null) {
+                    if (receiver.equals(userOfClientHandler.getUsername())) {
+                        userOfClientHandler = MainServer.getUsers().get(userOfClientHandler.getUsername());
+                        if (userOfClientHandler.getIsInChat().get(sender)) {
+                            c.getMySocket().write(message); // we can also write "this" object
+                            return true;  //seen by the receiver in the moment
+                        }
                     }
                 }
             }
+            return false;  //receiver is not currently in the chat
+        } else {
+            return "#exit";
         }
-        return false;  //receiver is not currently in the chat
     }
 }

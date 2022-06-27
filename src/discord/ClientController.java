@@ -185,18 +185,21 @@ public class ClientController {
         printer.println("enter \"#exit\" to exit the chat");
         while (true) {
             String message = MyScanner.getLine();
-            if (message.equals("#exit")) {
-                break;
-            }
+//            if (message.equals("#exit")) {
+//                break;
+//            }
             try {
                 mySocket.write(new ChatAction(user.getUsername(), message, friendName));
+                if (message.equals("#exit")) {
+                    break;
+                }
             } catch (IOException e) {
                 printer.printErrorMessage("IO");
             }
         }
 //        executorService.shutdownNow();
 //        listener.interrupt();
-        messageListener.shutdown();
+//        messageListener.shutdown();
 //        if (listener.isAlive()) {
 //            printer.println("exiting from chat!!");
 //        }

@@ -24,7 +24,12 @@ public class MessageListener implements Runnable{
             try {
                 inObject = mySocket.read();
                 if (inObject instanceof String) {
-                    printer.println((String) inObject);
+                    String message = (String) inObject;
+                    if (message.equals("#exit")) {
+                        break;
+                    }
+                    // else
+                    printer.println(message);
                 } else if (inObject instanceof Boolean) {
                     if ((Boolean) inObject) { // seen by the friend
                         printer.println("(seen)");
