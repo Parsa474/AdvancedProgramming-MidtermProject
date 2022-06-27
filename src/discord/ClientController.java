@@ -133,11 +133,10 @@ public class ClientController {
 
     private Runnable listenForMessage() {
         return new Runnable() {
-            private boolean exit = false;
             @Override
             public void run() {
                 Object inObject;
-                while (mySocket.getConnectionSocket().isConnected() && !exit) {
+                while (mySocket.getConnectionSocket().isConnected()) {
                     try {
                         inObject = mySocket.read();
                         if (inObject instanceof String) {
@@ -146,16 +145,19 @@ public class ClientController {
                             if ((Boolean) inObject) { // seen by the friend
                                 printer.println("(seen)");
                             }
+                        } else if (inObject instanceof Model) {
+                            user = (Model) inObject;
+                            break;
                         }
+                    } catch (InterruptedIOException e) {
+                        printer.println("bebinim chie");
                     } catch (IOException | ClassNotFoundException e) {
-                        mySocket.closeEverything();
+                        e.printStackTrace();
+//                mySocket.closeEverything();
                         break;
                     }
                 }
-            }
-
-            public void shutdown() {
-                exit = true;
+                printer.println("dige listen nemikonam");
             }
         };
     }
@@ -176,8 +178,8 @@ public class ClientController {
 
         // receiving messages
 //        ExecutorService executorService = Executors.newCachedThreadPool();
-        MessageListener messageListener = new MessageListener(mySocket, printer);
-        Thread listener = new Thread(messageListener);
+//        MessageListener messageListener = new MessageListener(mySocket, printer);
+        Thread listener = new Thread(listenForMessage());
         listener.start();
 //        executorService.execute(listener);
 
@@ -203,6 +205,11 @@ public class ClientController {
 //        if (listener.isAlive()) {
 //            printer.println("exiting from chat!!");
 //        }
+        try {
+            Thread.sleep(1000);
+        }catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         user.getIsInChat().replace(friendName, false);
         updateUserOnServer();
     }

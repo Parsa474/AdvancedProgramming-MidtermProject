@@ -47,9 +47,9 @@ public class ChatAction extends Action{
     // Other Methods:
     @Override
     public Object act() throws IOException {
+        Model senderUser = MainServer.getUsers().get(sender);
         if (!message.equals(sender + ": #exit")) {
             // updating database and server
-            Model senderUser = MainServer.getUsers().get(sender);
             senderUser.getPrivateChats().get(receiver).add(message); // should be checked !!!
             Model receiverUser = MainServer.getUsers().get(receiver);
             receiverUser.getPrivateChats().get(sender).add(message);
@@ -71,7 +71,7 @@ public class ChatAction extends Action{
             }
             return false;  //receiver is not currently in the chat
         } else {
-            return "#exit";
+            return senderUser;
         }
     }
 }

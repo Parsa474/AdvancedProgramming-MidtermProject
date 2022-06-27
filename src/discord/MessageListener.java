@@ -20,20 +20,18 @@ public class MessageListener implements Runnable{
     @Override
     public void run() {
         Object inObject;
-        while (mySocket.getConnectionSocket().isConnected() && !exit) {
+        while (mySocket.getConnectionSocket().isConnected()) {
             try {
                 inObject = mySocket.read();
                 if (inObject instanceof String) {
-                    String message = (String) inObject;
-                    if (message.equals("#exit")) {
-                        break;
-                    }
-                    // else
-                    printer.println(message);
+                    printer.println((String) inObject);
                 } else if (inObject instanceof Boolean) {
                     if ((Boolean) inObject) { // seen by the friend
                         printer.println("(seen)");
                     }
+                } else if (inObject instanceof Model) {
+
+                    break;
                 }
             } catch (InterruptedIOException e) {
                 printer.println("bebinim chie");
@@ -44,9 +42,5 @@ public class MessageListener implements Runnable{
             }
         }
         printer.println("dige listen nemikonam");
-    }
-
-    public void shutdown() {
-        exit = true;
     }
 }
