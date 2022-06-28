@@ -2,6 +2,7 @@ package discord;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.Set;
 
 public class View {
 
@@ -33,8 +34,10 @@ public class View {
                     System.err.println("This email is invalid (should have an '@' and a finish with a .example)");
             case "illegal character use" -> System.err.println("Do not use illegal characters!");
             case "main server" -> System.err.println("Could not connect to the main server");
-            case "change fail" -> System.out.println("Could not change the field, conditions not met");
-            case "full" -> System.out.println("You can't make a new server at the moment, the main server is full");
+            case "change fail" -> System.err.println("Could not change the field, conditions not met");
+            case "full" -> System.err.println("You can't make a new server at the moment, the main server is full");
+            case "server name change" ->
+                    System.err.println("You don't have the permission to change the server's name!");
             default -> System.err.println(error);
         }
     }
@@ -77,6 +80,8 @@ public class View {
             case "accept" -> System.out.println("The specified user's request was accepted");
             case "reject" -> System.out.println("The specified user's request was rejected");
             case "exit" -> System.out.println("Exited successfully!");
+            case "new role" -> System.out.println("The new role was created successfully!");
+            case "server name change" -> System.out.println("The server's name was changed successfully!");
         }
     }
 
@@ -102,6 +107,12 @@ public class View {
         }
     }
 
+    public void printServerMembersList(Set<String> members) {
+        for (String member : members) {
+            System.out.println(member);
+        }
+    }
+
     public void printTextChannelList(ArrayList<TextChannel> list) {
         for (int i = 0; i < list.size(); i++) {
             System.out.printf("%d. %s\n", i + 1, list.get(i).getName());
@@ -109,7 +120,7 @@ public class View {
     }
 
     public void printServerMenu() {
-        System.out.println("1. change server info");
+        System.out.println("1. change server info (make new roles from here)");
         System.out.println("2. add/remove a member");
         System.out.println("3. add/remove a text channel");
         System.out.println("4. enter a text channel");
@@ -135,7 +146,24 @@ public class View {
     public void printServerChangeInfoMenu() {
         System.out.println("1. Change server's name");
         System.out.println("2. Change a text channel's name");
-        System.out.println("3. Delete this server");
+        System.out.println("3. Create/edit a Role");
         System.out.println("4. Go back");
+    }
+
+    public void printAbilityList() {
+        System.out.println("1. Can create a new channel");
+        System.out.println("2. Can delete a channel");
+        System.out.println("3. Can remove a member from the server");
+        System.out.println("4. Can limit members from accessing a channel");
+        System.out.println("5. Can ban a member from the server");
+        System.out.println("6. Can change the server's name");
+        System.out.println("7. Can see the history of a chatroom");
+        System.out.println("8. Can pin a message");
+    }
+
+    public void printRoleEditMenu() {
+        System.out.println("1. Creat a new role");
+        System.out.println("2. Edit a role");
+        System.out.println("3. Go back");
     }
 }

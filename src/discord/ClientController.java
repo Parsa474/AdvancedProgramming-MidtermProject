@@ -3,6 +3,7 @@ package discord;
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class ClientController {
 
@@ -37,7 +38,7 @@ public class ClientController {
         while (true) {
             printer.printLoggedInMenu();
             int command = MyScanner.getInt(1, 7);
-            mySocket.write(new UpdateRequestAction(user.getUsername()));
+            mySocket.write(new UpdateUserFromMainServerAction(user.getUsername()));
             user = mySocket.readModel();
             switch (command) {
                 case 1 -> sendFriendRequest();
@@ -214,7 +215,7 @@ public class ClientController {
 
     private void updateUserOnServer() {
         try {
-            mySocket.write(new UpdateMyUserAction(user));
+            mySocket.write(new UpdateUserOnMainServerAction(user));
             mySocket.readBoolean(); // no usage. just for making connection free
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -223,13 +224,16 @@ public class ClientController {
 
     private void createNewServer() throws IOException, ClassNotFoundException {
         printer.printGetMessage("server's name");
-        String serverName = MyScanner.getLine();
+        String newServerName;
+        do {
+            newServerName = MyScanner.getLine();
+        } while ("".equals(newServerName.trim()));
         mySocket.write(new CreateNewServerRequestAction());
         int unicode = mySocket.read();
         if (unicode == -1) {
             printer.printErrorMessage("full");
         } else {
-            Server newServer = new Server(unicode, serverName, user.getUsername());
+            Server newServer = new Server(unicode, newServerName, user.getUsername());
             user.getServers().add(unicode);
             ArrayList<String> addedFriends = addFriendsToServer(newServer);
             mySocket.write(new AddNewServerToDatabaseAction(newServer));
@@ -238,9 +242,9 @@ public class ClientController {
                 mySocket.write(new AddFriendToServerAction(unicode, addedFriend));
                 mySocket.read();        // no usage
             }
-            printer.println(serverName + " members:");
+            printer.println(newServerName + " members:");
             printer.printList(members);
-            mySocket.write(new UpdateMyUserAction(user));
+            mySocket.write(new UpdateUserOnMainServerAction(user));
             mySocket.read();        // no usage
         }
     }
@@ -253,13 +257,13 @@ public class ClientController {
         ArrayList<String> addedFriends = new ArrayList<>();
         for (int friendIndex : getIntList(user.getFriends().size())) {
             String friendUsername = user.getFriends().get(friendIndex);
-            newServer.getMembers().add(friendUsername);
+            newServer.addNewMember(friendUsername);
             addedFriends.add(friendUsername);
         }
         return addedFriends;
     }
 
-    private ArrayList<Integer> getIntList(int max) {
+    public ArrayList<Integer> getIntList(int max) {
         while (true) {
             try {
                 ArrayList<Integer> output = new ArrayList<>();
@@ -272,9 +276,11 @@ public class ClientController {
                     int index = Integer.parseInt(indexString) - 1;
                     if (index >= 0 && index < max) {
                         output.add(index);
-                    }
+                    } else throw new IndexOutOfBoundsException();
                 }
                 return output;
+            } catch (IndexOutOfBoundsException e) {
+                printer.printErrorMessage("boundary");
             } catch (Exception e) {
                 printer.printErrorMessage("illegal character use");
             }
@@ -288,7 +294,7 @@ public class ClientController {
             mySocket.write(new EnterServerRequestAction(unicode));
             Server server = mySocket.read();
             myServers.add(server);
-            printer.println(i + ". " + server.getServerName());
+            printer.println((i + 1) + ". " + server.getServerName());
         }
         printer.println("enter 0 to go back");
         int index = MyScanner.getInt(0, user.getServers().size());
@@ -324,7 +330,7 @@ public class ClientController {
                 } else {
                     username = user.getUsername();
                 }
-                mySocket.write(new UpdateRequestAction(username));
+                mySocket.write(new UpdateUserFromMainServerAction(username));
                 user = mySocket.readModel();
                 break;
             }
@@ -340,7 +346,7 @@ public class ClientController {
             case 3 -> user.setStatus(Model.Status.DoNotDisturb);
             case 4 -> user.setStatus(Model.Status.Invisible);
         }
-        mySocket.write(new UpdateMyUserAction(user));
+        mySocket.write(new UpdateUserOnMainServerAction(user));
         mySocket.read();
     }
 

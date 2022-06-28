@@ -2,11 +2,11 @@ package discord;
 
 import java.io.IOException;
 
-public class UpdateServerAction extends Action {
+public class UpdateServerOnMainServerAction extends Action {
 
     private final Server server;
 
-    public UpdateServerAction(Server server) {
+    public UpdateServerOnMainServerAction(Server server) {
         this.server = server;
     }
 

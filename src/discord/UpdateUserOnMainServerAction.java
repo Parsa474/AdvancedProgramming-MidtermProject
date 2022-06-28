@@ -2,12 +2,12 @@ package discord;
 
 import java.io.IOException;
 
-public class UpdateMyUserAction extends Action {
+public class UpdateUserOnMainServerAction extends Action {
     // Fields:
     private final Model me;
 
     // Constructors:
-    public UpdateMyUserAction(Model me) {
+    public UpdateUserOnMainServerAction(Model me) {
         this.me = me;
     }
 
