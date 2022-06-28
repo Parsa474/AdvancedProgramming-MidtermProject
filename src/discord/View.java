@@ -34,8 +34,7 @@ public class View {
             case "illegal character use" -> System.err.println("Do not use illegal characters!");
             case "main server" -> System.err.println("Could not connect to the main server");
             case "change fail" -> System.out.println("Could not change the field, conditions not met");
-            case "full" ->
-                    System.out.println("You can't make a new server at the moment, the main server is full");
+            case "full" -> System.out.println("You can't make a new server at the moment, the main server is full");
             default -> System.err.println(error);
         }
     }
@@ -103,11 +102,40 @@ public class View {
         }
     }
 
+    public void printTextChannelList(ArrayList<TextChannel> list) {
+        for (int i = 0; i < list.size(); i++) {
+            System.out.printf("%d. %s\n", i + 1, list.get(i).getName());
+        }
+    }
+
+    public void printServerMenu() {
+        System.out.println("1. change server info");
+        System.out.println("2. add/remove a member");
+        System.out.println("3. add/remove a text channel");
+        System.out.println("4. enter a text channel");
+        System.out.println("5. Go back");
+    }
+
     public void printChangeUserMenu() {
-        System.out.println("1. change my username");
-        System.out.println("2. change my password");
-        System.out.println("3. change my email");
-        System.out.println("4. change my phone number");
-        System.out.println("5. go back");
+        System.out.println("1. Change my username");
+        System.out.println("2. Change my password");
+        System.out.println("3. Change my email");
+        System.out.println("4. Change my phone number");
+        System.out.println("5. Change my status");
+        System.out.println("6. Go back");
+    }
+
+    public void printStatusChangeMenu() {
+        System.out.println("1. Online");
+        System.out.println("2. Idle");
+        System.out.println("3. Do Not Disturb");
+        System.out.println("4. Invisible");
+    }
+
+    public void printServerChangeInfoMenu() {
+        System.out.println("1. Change server's name");
+        System.out.println("2. Change a text channel's name");
+        System.out.println("3. Delete this server");
+        System.out.println("4. Go back");
     }
 }

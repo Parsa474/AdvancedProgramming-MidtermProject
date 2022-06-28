@@ -16,6 +16,18 @@ public class ClientController {
         printer = new View();
     }
 
+    public Model getUser() {
+        return user;
+    }
+
+    public View getPrinter() {
+        return printer;
+    }
+
+    public MySocket getMySocket() {
+        return mySocket;
+    }
+
     public String toString() {
         return user.toString();
     }
@@ -121,33 +133,34 @@ public class ClientController {
     }
 
     private Runnable listenForMessage() {
-        return () -> {
-            Object inObject;
-            while (mySocket.getConnectionSocket().isConnected()) {
-                try {
-                    inObject = mySocket.read();
-                    if (inObject instanceof String message) {
-                        if (!message.contains("#exit")) {
-                            printer.println(message);
+        return new Runnable() {
+            @Override
+            public void run() {
+                Object inObject;
+                while (mySocket.getConnectionSocket().isConnected()) {
+                    try {
+                        inObject = mySocket.read();
+                        if (inObject instanceof String) {
+                            printer.println((String) inObject);
+                        } else if (inObject instanceof Boolean) {
+                            if ((Boolean) inObject) { // seen by the friend
+                                printer.println("(seen)");
+                            }
+                        } else if (inObject instanceof Model) {
+                            synchronized (user) {  // should it be user or "this"???????
+                                user.notify();
+                                user = (Model) inObject;
+                            }
+                            break;
                         }
-                    } else if (inObject instanceof Boolean) {
-                        if ((Boolean) inObject) { // seen by the friend
-                            printer.println("(seen)");
-                        }
-                    } else if (inObject instanceof Model) {
-                        synchronized (user) {  // should it be user or "this"???????
-                            user.notify();
-                            user = (Model) inObject;
-                        }
+                    } catch (IOException | ClassNotFoundException e) {
+                        e.printStackTrace();
+//                        mySocket.closeEverything();
                         break;
                     }
-                } catch (IOException | ClassNotFoundException e) {
-                    e.printStackTrace();
-//                        mySocket.closeEverything();
-                    break;
                 }
+                printer.printSuccessMessage("exit");
             }
-            printer.printSuccessMessage("exit");
         };
     }
 
@@ -280,7 +293,7 @@ public class ClientController {
         printer.println("enter 0 to go back");
         int index = MyScanner.getInt(0, user.getServers().size());
         if (index != 0) {
-            myServers.get(index - 1).enter();
+            myServers.get(index - 1).enter(this);
         }
     }
 
@@ -288,7 +301,7 @@ public class ClientController {
         while (true) {
             printer.println(user.toString());
             printer.printChangeUserMenu();
-            int command = MyScanner.getInt(1, 5);
+            int command = MyScanner.getInt(1, 6);
             String newField = "";
             SignUpAction changeAFieldAction = new SignUpAction(user.getUsername());
             switch (command) {
@@ -296,11 +309,14 @@ public class ClientController {
                 case 2 -> newField = receivePassword(changeAFieldAction);
                 case 3 -> newField = receiveEmail(changeAFieldAction);
                 case 4 -> newField = receivePhoneNumber(changeAFieldAction);
-                case 5 -> {
+                case 5 -> changeStatus();
+                case 6 -> {
                     return;
                 }
             }
-            if (newField != null) {
+            if (command == 5) {
+                printer.println("The status was changed successfully!");
+            } else if (newField != null) {
                 printer.println("The field was changed successfully!");
                 String username;
                 if (command == 1) {
@@ -311,10 +327,21 @@ public class ClientController {
                 mySocket.write(new UpdateRequestAction(username));
                 user = mySocket.readModel();
                 break;
-            } else {
-                printer.printErrorMessage("change fail");
             }
         }
+    }
+
+    private void changeStatus() throws IOException, ClassNotFoundException {
+        printer.printStatusChangeMenu();
+        int status = MyScanner.getInt(1, 4);
+        switch (status) {
+            case 1 -> user.setStatus(Model.Status.Online);
+            case 2 -> user.setStatus(Model.Status.Idle);
+            case 3 -> user.setStatus(Model.Status.DoNotDisturb);
+            case 4 -> user.setStatus(Model.Status.Invisible);
+        }
+        mySocket.write(new UpdateMyUserAction(user));
+        mySocket.read();
     }
 
 

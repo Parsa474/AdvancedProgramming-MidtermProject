@@ -1,8 +1,8 @@
 package discord;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class Server implements Serializable {
 
@@ -39,7 +39,49 @@ public class Server implements Serializable {
         return textChannels;
     }
 
-    public void enter() {
+    public void enter(ClientController clientController) throws IOException {
+        clientController.getPrinter().printServerMenu();
+        int command = MyScanner.getInt(1, 5);
+        switch (command) {
+            case 1 -> changeInfo(clientController);
+            case 2 -> changeMembers(clientController);
+            case 3 -> changeTextChannels(clientController);
+            case 4 -> enterATextChannel(clientController);
+        }
+    }
+
+    private void changeInfo(ClientController clientController) throws IOException {
+        clientController.getPrinter().printServerChangeInfoMenu();
+        int command = MyScanner.getInt(1, 4);
+        switch (command) {
+            case 1 -> {
+                clientController.getPrinter().printGetMessage("new server name");
+                serverName = MyScanner.getLine();
+            }
+            case 2 -> {
+                clientController.getPrinter().printTextChannelList(textChannels);
+                int index = MyScanner.getInt(1, textChannels.size());
+                clientController.getPrinter().printGetMessage("new text channel name");
+                String newTextChannelName = MyScanner.getLine();
+                textChannels.get(index).setName(newTextChannelName);
+
+            }
+            case 3 -> {
+                //delete this server!
+            }
+        }
+        clientController.getMySocket().write(new UpdateServerAction(this));
+    }
+
+    private void changeMembers(ClientController clientController) {
+
+    }
+
+    private void changeTextChannels(ClientController clientController) {
+
+    }
+
+    private void enterATextChannel(ClientController clientController) {
 
     }
 }
