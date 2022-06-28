@@ -28,7 +28,7 @@ public class TextChannelChatAction extends Action {
 
     public TextChannelChatAction(String sender, String message, int serverUnicode, int textChannelId, ArrayList<String> receivers) {
         this.sender = sender;
-        this.message = message;
+        this.message = sender + ": " + message;
         this.serverUnicode = serverUnicode;
         this.textChannelId = textChannelId;
         this.receivers = receivers;
@@ -41,6 +41,7 @@ public class TextChannelChatAction extends Action {
             // updating database and server
             synchronized (MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelId)) {
                 MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelId).getMessages().add(message);
+                MainServer.updateDatabase(MainServer.getServers().get(serverUnicode));
             }
             TextChannel updatedTextChannelFromMainServer = MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelId);
 //            textChannel.getMessages().add(message);
@@ -59,12 +60,11 @@ public class TextChannelChatAction extends Action {
                             synchronized (c.getMySocket()) {
                                 c.getMySocket().write(message); // we can also write "this" object
                             }
-                            return true;  //seen by the receiver in the moment
                         }
                     }
                 }
             }
-            return false;  //receiver is not currently in the chat
+            return null;  //receiver is not currently in the chat
         } else {
             return senderUser;
         }

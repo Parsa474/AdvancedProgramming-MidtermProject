@@ -89,7 +89,7 @@ public class Server implements Serializable {
         textChannels.get(0).getMembers().put(username, false);     //anyone gets added to the general text channel
     }
 
-    public void enter(ClientController clientController) throws IOException {
+    public Object enter(ClientController clientController) throws IOException {
         clientController.getPrinter().printServerMenu();
         int command = MyScanner.getInt(1, 5);
         HashSet<Ability> abilities = new HashSet<>();
@@ -100,8 +100,11 @@ public class Server implements Serializable {
             case 1 -> changeInfo(clientController, abilities);
             case 2 -> addOrRemoveMembers(clientController, abilities);
             case 3 -> addOrRemoveTextChannels(clientController, abilities);
-            case 4 -> enterATextChannel(clientController, abilities);
+            case 4 -> {
+                return enterATextChannel(clientController, abilities);
+            }
         }
+        return null;
     }
 
     private void changeInfo(ClientController clientController, HashSet<Ability> abilities) throws IOException {
@@ -167,7 +170,7 @@ public class Server implements Serializable {
         ArrayList<Integer> abilityIndexes = clientController.getIntList(8);
         Role newRole = new Role(newRoleName, new HashSet<>());
         for (int abilityIndex : abilityIndexes) {
-            newRole.getAbilities().add(Ability.values()[abilityIndex - 1]);
+            newRole.getAbilities().add(Ability.values()[abilityIndex]);
         }
         serverRoles.put(newRole.getRoleName(), newRole);
         clientController.getPrinter().printSuccessMessage("new role");
@@ -197,9 +200,9 @@ public class Server implements Serializable {
 
     }
 
-    private void enterATextChannel(ClientController clientController, HashSet<Ability> abilities) {
+    private TextChannel enterATextChannel(ClientController clientController, HashSet<Ability> abilities) {
         clientController.getPrinter().printTextChannelList(textChannels);
         int index = MyScanner.getInt(1, textChannels.size()) - 1;
-        textChannels.get(index).enter();
+        return textChannels.get(index);
     }
 }

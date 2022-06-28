@@ -48,7 +48,7 @@ public class ClientHandler implements Runnable {
                     if (action == null) {       // when logging out
                         user = null;
                         break;
-                    } else if (action instanceof SignUpAction && ((SignUpAction) action).getSubStage() == 1) {
+                    } else if (action instanceof SignUpAction && ((SignUpAction) action).getSubStage() == 1) {  //when changing username
                         mySocket.write(action.act());
                         user = MainServer.getUsers().get(((SignUpAction) action).getNewUsername());
                         break;

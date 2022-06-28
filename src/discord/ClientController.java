@@ -256,6 +256,7 @@ public class ClientController {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            textChannel = updateTextChannelFromMainServer(serverUnicode, textChannelId);
             textChannel.getMembers().put(user.getUsername(), false);
         }
         updateTextChannelOnMainServer(textChannel);
@@ -268,6 +269,16 @@ public class ClientController {
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
+    }
+
+    private TextChannel updateTextChannelFromMainServer(int serverUnicode, int textChannelId) {
+        try {
+            mySocket.write(new UpdateTextChannelOfServerFromMainServer(serverUnicode, textChannelId));
+            return mySocket.read();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private void createNewServer() throws IOException, ClassNotFoundException {
@@ -347,7 +358,10 @@ public class ClientController {
         printer.println("enter 0 to go back");
         int index = MyScanner.getInt(0, user.getServers().size());
         if (index != 0) {
-            myServers.get(index - 1).enter(this);
+            Object returning = myServers.get(index - 1).enter(this);
+            if (returning instanceof TextChannel) {
+                textChannelChat((TextChannel) returning);
+            }
         }
     }
 
