@@ -3,25 +3,28 @@ package discord;
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class ClientHandler implements Runnable {
-    // Fields:
-    public static ArrayList<ClientHandler> clientHandlers = new ArrayList<ClientHandler>();
+
+    public static List<ClientHandler> clientHandlers = Collections.synchronizedList(new ArrayList<>());
     private Model user;
     private final MySocket mySocket;
 
-    // Constructors:
     public ClientHandler(Socket socket) {
         mySocket = new MySocket(socket);
         clientHandlers.add(this);
     }
 
-    public ClientHandler(MySocket mySocket) {
-        this.mySocket = mySocket;
-        clientHandlers.add(this);
+    public Model getUser() {
+        return user;
     }
 
-    // Methods:
+    public MySocket getMySocket() {
+        return mySocket;
+    }
+
     @Override
     public void run() {
         //outer:
@@ -30,7 +33,7 @@ public class ClientHandler implements Runnable {
                 Action action;
                 while (user == null) {
                     action = mySocket.readAction();
-                    if (action instanceof LoginAction || (action instanceof SignUpAction && ((SignUpAction) action).getStage() == 4)) {
+                    if (action instanceof LoginAction || (action instanceof SignUpAction && ((SignUpAction) action).getStage() == 5)) {
                         user = (Model) action.act();
                         if (user != null) {
                             user.setStatus(Model.Status.Online);
@@ -42,16 +45,24 @@ public class ClientHandler implements Runnable {
                 }
                 while (true) {
                     action = mySocket.readAction();
-                    if (action != null) {       // for logging out
-                        mySocket.write(action.act());
-                    } else {
+                    if (action == null) {       // when logging out
                         user = null;
                         break;
+                    } else if (action instanceof SignUpAction && ((SignUpAction) action).getSubStage() == 1) {
+                        mySocket.write(action.act());
+                        user = MainServer.getUsers().get(((SignUpAction) action).getNewUsername());
+                        break;
+                    } else {
+                        mySocket.write(action.act());
                     }
                 }
             } catch (IOException | ClassNotFoundException e) {
                 clientHandlers.remove(this);
                 mySocket.closeEverything();
+                if (user != null)
+                    System.out.println("clientHandler of " + user.getUsername() + " got removed");
+                else
+                    System.out.println("clientHandler of a not logged in client got removed");
                 break;
             }
         }

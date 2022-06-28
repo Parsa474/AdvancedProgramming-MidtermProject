@@ -5,16 +5,20 @@ import java.util.LinkedList;
 
 public class View {
 
+    public void println(String message) {
+        System.out.println(message);
+    }
+
     public void printInitialMenu() {
-        System.out.println("1. login");
-        System.out.println("2. sign up");
-        System.out.println("3. exit");
+        System.out.println("1. Login");
+        System.out.println("2. Sign up");
+        System.out.println("3. Exit");
     }
 
     public void printErrorMessage(String error) {
         switch (error) {
             //case "file not found" -> System.err.println("file not found!");
-            //case "IO" -> System.err.println("I/O error occurred!");
+            case "IO" -> System.err.println("I/O error occurred!");
             case "yourself" -> System.err.println("You can't send a friend request to yourself!");
             case "already friend" -> System.err.println("This user is already your friend!");
             case "friend request" -> System.err.println("invalid username or friend request already sent!");
@@ -26,9 +30,11 @@ public class View {
                     System.err.println("You either didn't follow the specified format or this username is already taken!");
             case "format" -> System.err.println("Invalid format!");
             case "email" ->
-                    System.err.println("this email is invalid (should have an '@' and a finish with a .example)");
+                    System.err.println("This email is invalid (should have an '@' and a finish with a .example)");
             case "illegal character use" -> System.err.println("Do not use illegal characters!");
-            case "main server" -> System.err.println("could not connect to the main server");
+            case "main server" -> System.err.println("Could not connect to the main server");
+            case "change fail" -> System.out.println("Could not change the field, conditions not met");
+            case "full" -> System.out.println("You can't make a new server at the moment, the main server is full");
             default -> System.err.println(error);
         }
     }
@@ -38,7 +44,7 @@ public class View {
     }
 
     public void printCancelMessage() {
-        System.out.println("press enter to cancel the process");
+        System.out.println("Press enter to cancel the process");
     }
 
 
@@ -48,7 +54,7 @@ public class View {
             case "index" ->
                     System.out.println("Enter the index you want to accept followed by 'A' or reject followed by 'R'");
             default -> {
-                System.out.println("enter your " + field);
+                System.out.println("Enter your " + field);
                 if (field.equals("phone number")) System.out.println("(optional, simply enter 0 if you want to skip)");
             }
         }
@@ -57,27 +63,37 @@ public class View {
     public void printConditionMessage(String field) {
         switch (field) {
             case "username" ->
-                    System.out.println("should only consist English letters/numbers and be of a minimum length of 6 characters");
+                    System.out.println("Should only consist English letters/numbers and be of a minimum length of 6 characters");
             case "password" ->
-                    System.out.println("should consist of at least 1 capital letter, 1 small letter, 1 digit, and at least be of a length of 8");
+                    System.out.println("Should consist of at least 1 capital letter, 1 small letter, 1 digit, and at least be of a length of 8");
         }
     }
 
     public void printSuccessMessage(String field) {
         switch (field) {
             case "signUp" -> System.out.println("Signed up successfully!");
-            case "login" -> System.out.println("logged in successfully");
+            case "login" -> System.out.println("Logged in successfully");
             case "friend request" -> System.out.println("The request was sent successfully");
             case "accept" -> System.out.println("The specified user's request was accepted");
             case "reject" -> System.out.println("The specified user's request was rejected");
+            case "exit" -> System.out.println("Exited successfully!");
         }
     }
 
     public void printLoggedInMenu() {
-        System.out.println("1. send a friend request");
-        System.out.println("2. check friend request list");
-        System.out.println("3. chat with a friend");
-        System.out.println("4. log out");
+        System.out.println("1. Send a friend request");
+        System.out.println("2. Check friend request list");
+        System.out.println("3. Chat with a friend");
+        System.out.println("4. Make a new server");
+        System.out.println("5. Go to one of my servers");
+        System.out.println("6. Change my user info");
+        System.out.println("7. Log out");
+    }
+
+    public void printList(ArrayList<String> list) {
+        for (String s : list) {
+            System.out.println(s);
+        }
     }
 
     public void printList(LinkedList<String> list) {
@@ -86,7 +102,40 @@ public class View {
         }
     }
 
-    public void println(String text) {
-        System.out.println(text);
+    public void printTextChannelList(ArrayList<TextChannel> list) {
+        for (int i = 0; i < list.size(); i++) {
+            System.out.printf("%d. %s\n", i + 1, list.get(i).getName());
+        }
+    }
+
+    public void printServerMenu() {
+        System.out.println("1. change server info");
+        System.out.println("2. add/remove a member");
+        System.out.println("3. add/remove a text channel");
+        System.out.println("4. enter a text channel");
+        System.out.println("5. Go back");
+    }
+
+    public void printChangeUserMenu() {
+        System.out.println("1. Change my username");
+        System.out.println("2. Change my password");
+        System.out.println("3. Change my email");
+        System.out.println("4. Change my phone number");
+        System.out.println("5. Change my status");
+        System.out.println("6. Go back");
+    }
+
+    public void printStatusChangeMenu() {
+        System.out.println("1. Online");
+        System.out.println("2. Idle");
+        System.out.println("3. Do Not Disturb");
+        System.out.println("4. Invisible");
+    }
+
+    public void printServerChangeInfoMenu() {
+        System.out.println("1. Change server's name");
+        System.out.println("2. Change a text channel's name");
+        System.out.println("3. Delete this server");
+        System.out.println("4. Go back");
     }
 }

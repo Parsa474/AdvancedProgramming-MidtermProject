@@ -2,23 +2,25 @@ package discord;
 
 import java.io.*;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainServer {
+
     private static Map<String, Model> users = Collections.synchronizedMap(new HashMap<>());
+    private static Map<Integer, Server> servers = Collections.synchronizedMap(new HashMap<>());
     private final ServerSocket serverSocket;
     private final ExecutorService executorService;
 
-    // Constructors:
     public MainServer(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
         users = readUsers();
+        servers = readServers();
         executorService = Executors.newCachedThreadPool();
     }
 
-    // Methods:
     private static void makeDirectory(String path) {
         if (new File(path).exists()) return;
         if (!new File(path).mkdir()) {
@@ -30,29 +32,41 @@ public class MainServer {
     private static HashMap<String, Model> readUsers() {
         makeDirectory("assets");
         makeDirectory("assets\\users");
-        HashMap<String, Model> users = new HashMap<>();
+        HashMap<String, Model> clients = new HashMap<>();
         File folder = new File("assets\\users");
         File[] listOfFiles = folder.listFiles();
         if (listOfFiles != null)
             for (File file : listOfFiles) {
-                Model newUser = readUser(file);
-                if (newUser != null) {
-                    users.put(newUser.getUsername(), newUser);
-                }
-                else {
-                    System.out.println("null user was read!");
-                }
+                Model user = read(file);
+                if (user != null)
+                    clients.put(user.getUsername(), user);
+                else System.out.println("null user was read!");
             }
-        return users;
+        return clients;
     }
 
-    private static Model readUser(File file) {
+    private static HashMap<Integer, Server> readServers() {
+        makeDirectory("assets\\servers");
+        HashMap<Integer, Server> servers = new HashMap<>();
+        File folder = new File("assets\\servers");
+        File[] listOfFiles = folder.listFiles();
+        if (listOfFiles != null)
+            for (File file : listOfFiles) {
+                Server server = read(file);
+                if (server != null)
+                    servers.put(server.getUnicode(), server);
+                else System.out.println("null user was read!");
+            }
+        return servers;
+    }
+
+    private static <Type> Type read(File file) {
         FileInputStream fileIn = null;
         ObjectInputStream in = null;
         try {
             fileIn = new FileInputStream(file);
             in = new ObjectInputStream(fileIn);
-            return (Model) in.readObject();
+            return (Type) in.readObject();
         } catch (FileNotFoundException e) {
             System.out.println("file not found while iterating over the users!");
         } catch (IOException e) {
@@ -65,23 +79,17 @@ public class MainServer {
         return null;
     }
 
-    public static Model updateServerAndGetUser(String username) {
-        users = readUsers();
+    public static Model GetUserFromServer(String username) {
+        //users.replace(username, readUser(new File("assets\\users\\" + username.concat(".bin"))));
         return users.get(username);
-    }
-
-    public static LinkedList<String> updatingFriendRequests(String username) {
-        users = readUsers();
-        return users.get(username).getFriendRequests();
-    }
-
-    public static LinkedList<String> updatingFriends(String username) {
-        users = readUsers();
-        return users.get(username).getFriends();
     }
 
     public static Map<String, Model> getUsers() {
         return users;
+    }
+
+    public static Map<Integer, Server> getServers() {
+        return servers;
     }
 
     private static void handleClosingInputs(FileInputStream fileIn, ObjectInputStream in) {
@@ -100,11 +108,10 @@ public class MainServer {
     public void startServer() {
         try {
             while (!serverSocket.isClosed()) {
-//                Socket socket = serverSocket.accept();
-                MySocket newConnectionSocket = new MySocket(serverSocket.accept());
+                Socket socket = serverSocket.accept();
                 System.out.println("A new client has connected");
-//                ClientHandler clientHandler = new ClientHandler(newConnectionSocket);
-                executorService.execute(new ClientHandler(newConnectionSocket));
+                ClientHandler clientHandler = new ClientHandler(socket);
+                executorService.execute(clientHandler);
             }
         } catch (IOException e) {
             closeServerSocket();
@@ -126,20 +133,39 @@ public class MainServer {
         updateDatabase(newUser);
     }
 
-    public static void updateDatabase(Model user) {
+    public static <Type> void updateDatabase(Type object) {
         FileOutputStream fileOut = null;
         ObjectOutputStream out = null;
         try {
-            String path = "assets\\users";
-            fileOut = new FileOutputStream(path + "\\" + user.getUsername().concat(".bin"));
+            String path = "assets\\";
+            String id = "";
+            if (object instanceof Model) {
+                id = ((Model) object).getUsername();
+                path = path.concat("users");
+            }
+            if (object instanceof Server) {
+                id = ((Server) object).getUnicode() + "";
+                path = path.concat("servers");
+            }
+            fileOut = new FileOutputStream(path + "\\" + id.concat(".bin"));
             out = new ObjectOutputStream(fileOut);
-            out.writeObject(user);
+            out.writeObject(object);
         } catch (FileNotFoundException e) {
             System.out.println("Could not find this file!");
         } catch (IOException e) {
             System.out.println("I/O error occurred!");
         } finally {
             handleClosingOutputs(fileOut, out);
+        }
+    }
+
+    public static void deleteUserFromDataBase(String username) {
+        String path = "assets\\users\\" + username.concat(".bin");
+        File wantToDeleteFile = new File(path);
+        if (wantToDeleteFile.delete()) {
+            System.out.println("Deleted successfully");
+        } else {
+            System.out.println("Failed to delete!");
         }
     }
 
