@@ -222,6 +222,54 @@ public class ClientController {
         }
     }
 
+    public void textChannelChat(TextChannel textChannel) {
+        textChannel.getMembers().put(user.getUsername(), true);
+        updateTextChannelOnMainServer(textChannel);
+        int serverUnicode = textChannel.getServerUnicode();
+        int textChannelId = textChannel.getId();
+        ArrayList<String> receivers = new ArrayList<String>(textChannel.getMembers().keySet());
+        receivers.remove(user.getUsername()); // check kon ke hamuno remove kone
+        // printing previous messages
+        printer.printList(textChannel.getMessages());
+
+        // receiving messages
+        Thread listener = new Thread(listenForMessage());
+        listener.start();
+
+        // sending message
+        printer.println("enter \"#exit\" to exit the chat");
+        while (true) {
+            String message = MyScanner.getLine();
+            try {
+                mySocket.write(new TextChannelChatAction(user.getUsername(), message, serverUnicode, textChannelId, receivers));
+                if (message.equals("#exit")) {
+                    break;
+                }
+            } catch (IOException e) {
+                printer.printErrorMessage("IO");
+            }
+        }
+
+        synchronized (user) {
+            try {
+                user.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            textChannel.getMembers().put(user.getUsername(), false);
+        }
+        updateTextChannelOnMainServer(textChannel);
+    }
+
+    private void updateTextChannelOnMainServer(TextChannel updatedTextChannel) {
+        try {
+            mySocket.write(new UpdateTextChannelOfServerOnMainServer(updatedTextChannel));
+            mySocket.readBoolean(); // no usage. just for making connection free
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void createNewServer() throws IOException, ClassNotFoundException {
         printer.printGetMessage("server's name");
         String newServerName;
@@ -237,13 +285,13 @@ public class ClientController {
             user.getServers().add(unicode);
             ArrayList<String> addedFriends = addFriendsToServer(newServer);
             mySocket.write(new AddNewServerToDatabaseAction(newServer));
-            ArrayList<String> members = mySocket.read();
+            mySocket.read();            // no usage
             for (String addedFriend : addedFriends) {
                 mySocket.write(new AddFriendToServerAction(unicode, addedFriend));
                 mySocket.read();        // no usage
             }
             printer.println(newServerName + " members:");
-            printer.printList(members);
+            printer.printList(addedFriends);
             mySocket.write(new UpdateUserOnMainServerAction(user));
             mySocket.read();        // no usage
         }

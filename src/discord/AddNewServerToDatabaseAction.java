@@ -14,6 +14,6 @@ public class AddNewServerToDatabaseAction extends Action {
     public Object act() throws IOException {
         MainServer.getServers().put(newServer.getUnicode(), newServer);
         MainServer.updateDatabase(newServer);
-        return MainServer.getServers().get(newServer.getUnicode()).getMembers();
+        return true;
     }
 }

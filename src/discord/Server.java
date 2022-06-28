@@ -5,7 +5,7 @@ import java.io.Serializable;
 import java.util.*;
 
 public class Server implements Serializable {
-
+    // Fields:
     private final int unicode;
     private String serverName;
     private final String owner;
@@ -13,9 +13,8 @@ public class Server implements Serializable {
     private final HashMap<String, HashSet<Role>> members;
     private final ArrayList<TextChannel> textChannels;
 
-
+    // Constructors:
     public Server(int unicode, String serverName, String creator) {
-
         this.unicode = unicode;
         this.serverName = serverName;
         owner = creator;
@@ -41,24 +40,6 @@ public class Server implements Serializable {
         textChannels.add(new TextChannel(unicode, 0, "general", generalMembers, new ArrayList<>()));
     }
 
-    public void addNewMember(String username) {
-        members.put(username, new HashSet<>());                    //new HashSet of roles they may have
-        members.get(username).add(serverRoles.get("member"));      //anyone gets the "member" role at first
-        textChannels.get(0).getMembers().put(username, false);     //anyone gets added to the general text channel
-    }
-
-    public int getUnicode() {
-        return unicode;
-    }
-
-    public String getServerName() {
-        return serverName;
-    }
-
-    public HashMap<String, HashSet<Role>> getMembers() {
-        return members;
-    }
-
     public enum Ability {
         CreateChannel,
         RemoveChannel,
@@ -68,6 +49,44 @@ public class Server implements Serializable {
         ChangeServerName,
         SeeChatHistory,
         PinMessage
+    }
+
+    // Methods:
+    // Getter Methods:
+    public int getUnicode() {
+        return unicode;
+    }
+
+    public String getServerName() {
+        return serverName;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public HashMap<String, Role> getServerRoles() {
+        return serverRoles;
+    }
+
+    public HashMap<String, HashSet<Role>> getMembers() {
+        return members;
+    }
+
+    public ArrayList<TextChannel> getTextChannels() {
+        return textChannels;
+    }
+
+    // Setter Methods:
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
+    }
+
+    // Other Methods:
+    public void addNewMember(String username) {
+        members.put(username, new HashSet<>());                    //new HashSet of roles they may have
+        members.get(username).add(serverRoles.get("member"));      //anyone gets the "member" role at first
+        textChannels.get(0).getMembers().put(username, false);     //anyone gets added to the general text channel
     }
 
     public void enter(ClientController clientController) throws IOException {

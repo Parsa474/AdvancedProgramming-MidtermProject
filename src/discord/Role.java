@@ -1,8 +1,9 @@
 package discord;
 
+import java.io.Serializable;
 import java.util.HashSet;
 
-public class Role {
+public class Role implements Serializable {
     private String roleName;
     private final HashSet<Server.Ability> abilities;
 
