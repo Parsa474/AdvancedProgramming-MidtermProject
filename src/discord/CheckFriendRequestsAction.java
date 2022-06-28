@@ -2,7 +2,7 @@ package discord;
 
 import java.util.ArrayList;
 
-public class CheckFriendRequestsAction extends Action {
+public class CheckFriendRequestsAction implements Action {
 
     private final String username;
     private final int index;

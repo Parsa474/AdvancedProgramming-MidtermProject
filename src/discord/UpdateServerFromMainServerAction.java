@@ -2,11 +2,11 @@ package discord;
 
 import java.io.IOException;
 
-public class EnterServerRequestAction implements Action {
+public class UpdateServerFromMainServerAction implements Action {
 
     private final int unicode;
 
-    public EnterServerRequestAction(int unicode) {
+    public UpdateServerFromMainServerAction(int unicode) {
         this.unicode = unicode;
     }
 

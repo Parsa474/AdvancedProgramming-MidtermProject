@@ -2,7 +2,7 @@ package discord;
 
 import java.io.IOException;
 
-public class AddFriendToServerAction extends Action {
+public class AddFriendToServerAction implements Action {
 
     private final int unicode;
     private final String friendUsername;

@@ -37,7 +37,7 @@ public class ClientController {
         while (true) {
             printer.printLoggedInMenu();
             int command = MyScanner.getInt(1, 7);
-            mySocket.write(new UpdateRequestAction(user.getUsername()));
+            mySocket.write(new UpdateUserFromMainServerAction(user.getUsername()));
             user = mySocket.readModel();
             switch (command) {
                 case 1 -> sendFriendRequest();
@@ -139,6 +139,10 @@ public class ClientController {
                 Object inObject;
                 while (mySocket.getConnectionSocket().isConnected()) {
                     try {
+                        // synchronized??????
+                        //
+                        //
+                        //
                         inObject = mySocket.read();
                         if (inObject instanceof String) {
                             printer.println((String) inObject);
@@ -174,7 +178,7 @@ public class ClientController {
         }
         String friendName = user.getFriends().get(friendIndex);
         user.getIsInChat().replace(friendName, true);
-        updateUserOnServer();
+        updateUserOnMainServer();
         //printing previous messages
         printer.printList(user.getPrivateChats().get(friendName));
 
@@ -209,12 +213,60 @@ public class ClientController {
             }
             user.getIsInChat().replace(friendName, false);
         }
-        updateUserOnServer();
+        updateUserOnMainServer();
     }
 
-    private void updateUserOnServer() {
+    private void updateUserOnMainServer() {
         try {
-            mySocket.write(new UpdateMyUserAction(user));
+            mySocket.write(new UpdateUserOnMainServerAction(user));
+            mySocket.readBoolean(); // no usage. just for making connection free
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void textChannelChat(TextChannel textChannel) {
+        textChannel.getMembers().put(user.getUsername(), true);
+        updateTextChannelOnMainServer(textChannel);
+        int serverUnicode = textChannel.getServerUnicode();
+        int textChannelId = textChannel.getId();
+        ArrayList<String> receivers = new ArrayList<String>(textChannel.getMembers().keySet());
+        receivers.remove(user.getUsername()); // check kon ke hamuno remove kone
+        // printing previous messages
+        printer.printList(textChannel.getMessages());
+
+        // receiving messages
+        Thread listener = new Thread(listenForMessage());
+        listener.start();
+
+        // sending message
+        printer.println("enter \"#exit\" to exit the chat");
+        while (true) {
+            String message = MyScanner.getLine();
+            try {
+                mySocket.write(new TextChannelChatAction(user.getUsername(), message, serverUnicode, textChannelId, receivers));
+                if (message.equals("#exit")) {
+                    break;
+                }
+            } catch (IOException e) {
+                printer.printErrorMessage("IO");
+            }
+        }
+
+        synchronized (user) {
+            try {
+                user.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            textChannel.getMembers().put(user.getUsername(), false);
+        }
+        updateUserOnMainServer();
+    }
+
+    private void updateTextChannelOnMainServer(TextChannel updatedTextChannel) {
+        try {
+            mySocket.write(new UpdateTextChannelOfServerOnMainServer(updatedTextChannel));
             mySocket.readBoolean(); // no usage. just for making connection free
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -236,12 +288,12 @@ public class ClientController {
             ArrayList<String> members = mySocket.read();
             for (String addedFriend : addedFriends) {
                 mySocket.write(new AddFriendToServerAction(unicode, addedFriend));
-                mySocket.read();        // no usage
+                mySocket.read();        // no usage. just for making connection free
             }
             printer.println(serverName + " members:");
             printer.printList(members);
-            mySocket.write(new UpdateMyUserAction(user));
-            mySocket.read();        // no usage
+            mySocket.write(new UpdateUserOnMainServerAction(user));
+            mySocket.read();        // no usage. just for making connection free
         }
     }
 
@@ -288,12 +340,15 @@ public class ClientController {
             mySocket.write(new EnterServerRequestAction(unicode));
             Server server = mySocket.read();
             myServers.add(server);
-            printer.println(i + ". " + server.getServerName());
+            printer.println((i + 1) + ". " + server.getServerName());
         }
         printer.println("enter 0 to go back");
         int index = MyScanner.getInt(0, user.getServers().size());
         if (index != 0) {
-            myServers.get(index - 1).enter(this);
+            Object returning = myServers.get(index - 1).enter(this);
+            if (returning instanceof TextChannel) {
+                textChannelChat((TextChannel) returning);
+            }
         }
     }
 
@@ -324,7 +379,7 @@ public class ClientController {
                 } else {
                     username = user.getUsername();
                 }
-                mySocket.write(new UpdateRequestAction(username));
+                mySocket.write(new UpdateUserFromMainServerAction(username));
                 user = mySocket.readModel();
                 break;
             }
@@ -340,7 +395,7 @@ public class ClientController {
             case 3 -> user.setStatus(Model.Status.DoNotDisturb);
             case 4 -> user.setStatus(Model.Status.Invisible);
         }
-        mySocket.write(new UpdateMyUserAction(user));
+        mySocket.write(new UpdateUserOnMainServerAction(user));
         mySocket.read();
     }
 

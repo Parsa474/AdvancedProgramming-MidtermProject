@@ -3,7 +3,7 @@ package discord;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SignUpAction extends Action {
+public class SignUpAction implements Action {
 
     private String username;
     private String newUsername;     //used for changing username

@@ -2,7 +2,7 @@ package discord;
 
 import java.io.IOException;
 
-public class AddNewServerToDatabaseAction extends Action {
+public class AddNewServerToDatabaseAction implements Action {
 
     private final Server newServer;
 

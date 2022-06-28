@@ -2,7 +2,7 @@ package discord;
 
 import java.io.IOException;
 
-public class CreateNewServerRequestAction extends Action {
+public class CreateNewServerRequestAction implements Action {
 
     @Override
     public Object act() throws IOException {

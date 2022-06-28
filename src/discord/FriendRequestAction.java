@@ -1,6 +1,6 @@
 package discord;
 
-public class FriendRequestAction extends Action {
+public class FriendRequestAction implements Action {
 
     private final String requester;
     private final String username;

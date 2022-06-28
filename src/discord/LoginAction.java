@@ -1,6 +1,6 @@
 package discord;
 
-public class LoginAction extends Action {
+public class LoginAction implements Action {
 
     private final String username;
     private final String password;

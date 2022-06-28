@@ -17,6 +17,7 @@ public class Server implements Serializable {
         members = new ArrayList<>();
         members.add(creator);
         textChannels = new ArrayList<>();
+        textChannels.add(new TextChannel(unicode, 0, "general",members, new ArrayList<>()));
     }
 
     public int getUnicode() {
@@ -39,15 +40,18 @@ public class Server implements Serializable {
         return textChannels;
     }
 
-    public void enter(ClientController clientController) throws IOException {
+    public Object enter(ClientController clientController) throws IOException {
         clientController.getPrinter().printServerMenu();
         int command = MyScanner.getInt(1, 5);
         switch (command) {
             case 1 -> changeInfo(clientController);
             case 2 -> changeMembers(clientController);
             case 3 -> changeTextChannels(clientController);
-            case 4 -> enterATextChannel(clientController);
+            case 4 -> {
+                return enterATextChannel(clientController);
+            }
         }
+        return null;
     }
 
     private void changeInfo(ClientController clientController) throws IOException {
@@ -70,7 +74,7 @@ public class Server implements Serializable {
                 //delete this server!
             }
         }
-        clientController.getMySocket().write(new UpdateServerAction(this));
+        clientController.getMySocket().write(new UpdateServerOnMainServerAction(this));
     }
 
     private void changeMembers(ClientController clientController) {
@@ -81,7 +85,9 @@ public class Server implements Serializable {
 
     }
 
-    private void enterATextChannel(ClientController clientController) {
-
+    private TextChannel enterATextChannel(ClientController clientController) {
+        clientController.getPrinter().printTextChannelList(textChannels);
+        int index = MyScanner.getInt(1, textChannels.size()) - 1;
+        return textChannels.get(index);
     }
 }
