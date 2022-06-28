@@ -10,6 +10,6 @@ public class UpdateRequestAction extends Action {
 
     @Override
     public Object act() {
-        return MainServer.updateServerAndGetUser(username);
+        return MainServer.GetUserFromServer(username);
     }
 }

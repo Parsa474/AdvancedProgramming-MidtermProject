@@ -1,6 +1,8 @@
 package discord;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 
 public class Model implements Serializable {
@@ -9,18 +11,24 @@ public class Model implements Serializable {
     private String password;
     private String email;
     private String phoneNumber;
+    private Status status;
     private final LinkedList<String> friendRequests;
     private final LinkedList<String> friends;
-    private Status status;
+    private final HashMap<String, Boolean> isInChat;
+    private final HashMap<String, ArrayList<String>> privateChats;
+    private final ArrayList<Integer> servers;
 
     public Model(String username, String password, String email, String phoneNumber) {
         this.username = username;
         this.password = password;
         this.email = email;
         this.phoneNumber = phoneNumber;
-        this.friendRequests = new LinkedList<>();
-        this.friends = new LinkedList<>();
         status = Status.Offline;
+        friendRequests = new LinkedList<>();
+        friends = new LinkedList<>();
+        isInChat = new HashMap<>();
+        privateChats = new HashMap<>();
+        servers = new ArrayList<>();
     }
 
     public enum Status {
@@ -59,6 +67,14 @@ public class Model implements Serializable {
         this.phoneNumber = phoneNumber;
     }
 
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
     public LinkedList<String> getFriendRequests() {
         return friendRequests;
     }
@@ -67,12 +83,16 @@ public class Model implements Serializable {
         return friends;
     }
 
-    public Status getStatus() {
-        return status;
+    public HashMap<String, Boolean> getIsInChat() {
+        return isInChat;
     }
 
-    public void setStatus(Status status) {
-        this.status = status;
+    public HashMap<String, ArrayList<String>> getPrivateChats() {
+        return privateChats;
+    }
+
+    public ArrayList<Integer> getServers() {
+        return servers;
     }
 
     public String toString() {

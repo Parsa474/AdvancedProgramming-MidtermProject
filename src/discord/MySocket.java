@@ -46,16 +46,12 @@ public class MySocket {
         objectOutputStream.writeObject(object);
     }
 
-    public Object read() throws IOException, ClassNotFoundException {
-        return objectInputStream.readObject();
+    public <Type> Type read() throws IOException, ClassNotFoundException {
+        return (Type) objectInputStream.readObject();
     }
 
     public Action readAction() throws IOException, ClassNotFoundException {
         return (Action) objectInputStream.readObject();
-    }
-
-    public String readString() throws IOException, ClassNotFoundException {
-        return (String) objectInputStream.readObject();
     }
 
     public Model readModel() throws IOException, ClassNotFoundException {
@@ -66,7 +62,7 @@ public class MySocket {
         return (boolean) objectInputStream.readObject();
     }
 
-    public void flush() throws IOException {
-        objectOutputStream.flush();
+    public String readString() throws IOException, ClassNotFoundException {
+        return (String) objectInputStream.readObject();
     }
 }

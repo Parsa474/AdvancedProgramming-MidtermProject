@@ -123,9 +123,13 @@ public class SignUpAction extends Action {
                     }
                     case 3 -> {
                         success = isAValidEmail(email);
-                        if (success) changedUser.setEmail(newUsername);
+                        if (success) changedUser.setEmail(email);
                     }
                     case 4 -> {
+                        if ("0".equals(phoneNumber)) {
+                            changedUser.setPhoneNumber(null);
+                            return true;
+                        }
                         success = isMatched(phoneNumber);
                         if (success) changedUser.setPhoneNumber(phoneNumber);
                     }

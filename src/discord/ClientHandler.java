@@ -3,16 +3,26 @@ package discord;
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class ClientHandler implements Runnable {
 
-    public static ArrayList<ClientHandler> clientHandlers = new ArrayList<>();
+    public static List<ClientHandler> clientHandlers = Collections.synchronizedList(new ArrayList<>());
     private Model user;
     private final MySocket mySocket;
 
     public ClientHandler(Socket socket) {
         mySocket = new MySocket(socket);
         clientHandlers.add(this);
+    }
+
+    public Model getUser() {
+        return user;
+    }
+
+    public MySocket getMySocket() {
+        return mySocket;
     }
 
     @Override
@@ -49,7 +59,10 @@ public class ClientHandler implements Runnable {
             } catch (IOException | ClassNotFoundException e) {
                 clientHandlers.remove(this);
                 mySocket.closeEverything();
-                System.out.println("clientHandler got removed");
+                if (user != null)
+                    System.out.println("clientHandler of " + user.getUsername() + " got removed");
+                else
+                    System.out.println("clientHandler of a not logged in client got removed");
                 break;
             }
         }
