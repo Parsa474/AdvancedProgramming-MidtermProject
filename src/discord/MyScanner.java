@@ -1,9 +1,13 @@
 package discord;
 
+import java.util.Scanner;
+
 public class MyScanner {
 
-    private final static java.util.Scanner scanner = new java.util.Scanner(System.in);
+    // Fields:
+    private final static java.util.Scanner scanner = new Scanner(System.in);
 
+    // Methods:
     public static String getLine() {
         return scanner.nextLine();
     }

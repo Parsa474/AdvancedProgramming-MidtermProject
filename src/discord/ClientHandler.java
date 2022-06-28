@@ -8,15 +8,18 @@ import java.util.List;
 
 public class ClientHandler implements Runnable {
 
+    // Fields:
     public static List<ClientHandler> clientHandlers = Collections.synchronizedList(new ArrayList<>());
     private Model user;
     private final MySocket mySocket;
 
+    // Constructors:
     public ClientHandler(Socket socket) {
         mySocket = new MySocket(socket);
         clientHandlers.add(this);
     }
 
+    // Getters:
     public Model getUser() {
         return user;
     }
@@ -25,34 +28,40 @@ public class ClientHandler implements Runnable {
         return mySocket;
     }
 
+    // Methods:
     @Override
     public void run() {
-        //outer:
         while (true) {
             try {
                 Action action;
+                // the first while loop is for signing up or logging in
                 while (user == null) {
-                    action = mySocket.readAction();
+                    action = mySocket.read();
                     if (action instanceof LoginAction || (action instanceof SignUpAction && ((SignUpAction) action).getStage() == 5)) {
                         user = (Model) action.act();
                         if (user != null) {
-                            user.setStatus(Model.Status.Online);
+                            user.setStatus(Status.Online);
                         }
                         mySocket.write(user);
                     } else {
                         mySocket.write(action.act());
                     }
                 }
+
+                // the second while loop is for any other action after logging in or signing up
                 while (true) {
-                    action = mySocket.readAction();
-                    if (action == null) {       // when logging out
+                    action = mySocket.read();
+                    // only when logging out the action is null
+                    if (action == null) {
                         user = null;
                         break;
+                        // next condition is met when changing username
                     } else if (action instanceof SignUpAction && ((SignUpAction) action).getSubStage() == 1) {
                         mySocket.write(action.act());
                         user = MainServer.getUsers().get(((SignUpAction) action).getNewUsername());
                         break;
                     } else {
+                        // for any other action besides logging out or changing username
                         mySocket.write(action.act());
                     }
                 }
@@ -67,23 +76,4 @@ public class ClientHandler implements Runnable {
             }
         }
     }
-
-    /*public void removeThisAndCloseEverything() {
-        clientHandlers.remove(this);
-        broadcastMessage("SERVER: " + user.getUsername() + " has left the chat!");
-        mySocket.closeEverything();
-    }
-
-    public void broadcastMessage(String messageToSend) {
-        for (ClientHandler clientHandler : clientHandlers) {
-            try {
-                if (!clientHandler.user.getUsername().equals(user.getUsername())) {
-                    mySocket.write(messageToSend);
-                    mySocket.write(messageToSend);
-                }
-            } catch (IOException e) {
-                removeThisAndCloseEverything();
-            }
-        }
-    }*/
 }

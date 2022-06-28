@@ -2,15 +2,15 @@ package discord;
 
 import java.io.IOException;
 
-public class CreateNewServerRequestAction extends Action {
+public class CreateNewServerRequestAction implements Action {
 
+    // Methods:
     @Override
     public Object act() throws IOException {
-        for (int unicode = 0; unicode < 100; unicode++) {
-            if (!MainServer.getServers().containsKey(unicode)) {
-                return unicode;
-            }
-        }
-        return -1;
+        int unicode = -1;
+        do {
+            unicode++;
+        } while (MainServer.getServers().containsKey(unicode));
+        return unicode;
     }
 }

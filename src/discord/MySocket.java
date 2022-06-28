@@ -7,10 +7,12 @@ import java.net.Socket;
 
 public class MySocket {
 
+    // Fields:
     private final Socket connectionSocket;
     private ObjectOutputStream objectOutputStream;
     private ObjectInputStream objectInputStream;
 
+    // Constructors:
     public MySocket(Socket connectionSocket) {
         this.connectionSocket = connectionSocket;
         try {
@@ -21,10 +23,13 @@ public class MySocket {
         }
     }
 
+
+    // Getters:
     public Socket getConnectionSocket() {
         return connectionSocket;
     }
 
+    // Other Methods:
     public void closeEverything() {
         try {
             if (objectOutputStream != null) {
@@ -48,21 +53,5 @@ public class MySocket {
 
     public <Type> Type read() throws IOException, ClassNotFoundException {
         return (Type) objectInputStream.readObject();
-    }
-
-    public Action readAction() throws IOException, ClassNotFoundException {
-        return (Action) objectInputStream.readObject();
-    }
-
-    public Model readModel() throws IOException, ClassNotFoundException {
-        return (Model) objectInputStream.readObject();
-    }
-
-    public boolean readBoolean() throws IOException, ClassNotFoundException {
-        return (boolean) objectInputStream.readObject();
-    }
-
-    public String readString() throws IOException, ClassNotFoundException {
-        return (String) objectInputStream.readObject();
     }
 }

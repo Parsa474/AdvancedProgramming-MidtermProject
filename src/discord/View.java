@@ -18,11 +18,10 @@ public class View {
 
     public void printErrorMessage(String error) {
         switch (error) {
-            //case "file not found" -> System.err.println("file not found!");
             case "IO" -> System.err.println("I/O error occurred!");
             case "yourself" -> System.err.println("You can't send a friend request to yourself!");
             case "already friend" -> System.err.println("This user is already your friend!");
-            case "friend request" -> System.err.println("invalid username or friend request already sent!");
+            case "friend request" -> System.err.println("Invalid username or friend request already sent!");
             case "not found username" -> System.err.println("A user by this username was not found!");
             case "boundary" -> System.err.println("Out of boundary index used!");
             case "length" -> System.err.println("Invalid input length");
@@ -35,7 +34,6 @@ public class View {
             case "illegal character use" -> System.err.println("Do not use illegal characters!");
             case "main server" -> System.err.println("Could not connect to the main server");
             case "change fail" -> System.err.println("Could not change the field, conditions not met");
-            case "full" -> System.err.println("You can't make a new server at the moment, the main server is full");
             case "server name change" ->
                     System.err.println("You don't have the permission to change the server's name!");
             default -> System.err.println(error);
@@ -43,13 +41,12 @@ public class View {
     }
 
     public void printGoBackMessage() {
-        System.out.println("(press enter to go back)");
+        System.out.println("(Press enter to go back)");
     }
 
     public void printCancelMessage() {
         System.out.println("Press enter to cancel the process");
     }
-
 
     public void printGetMessage(String field) {
         switch (field) {
@@ -58,7 +55,7 @@ public class View {
                     System.out.println("Enter the index you want to accept followed by 'A' or reject followed by 'R'");
             default -> {
                 System.out.println("Enter your " + field);
-                if (field.equals("phone number")) System.out.println("(optional, simply enter 0 if you want to skip)");
+                if (field.equals("phone number")) System.out.println("(Optional, simply enter 0 if you want to skip)");
             }
         }
     }
@@ -120,11 +117,12 @@ public class View {
     }
 
     public void printServerMenu() {
-        System.out.println("1. change server info (make new roles from here)");
-        System.out.println("2. add/remove a member");
-        System.out.println("3. add/remove a text channel");
-        System.out.println("4. enter a text channel");
-        System.out.println("5. Go back");
+        System.out.println("1. Change server info (make new roles from here)");
+        System.out.println("2. Add/remove a member");
+        System.out.println("3. Add/remove a text channel");
+        System.out.println("4. Enter a text channel");
+        System.out.println("5. See all the roles of everyone");
+        System.out.println("6. Go back");
     }
 
     public void printChangeUserMenu() {

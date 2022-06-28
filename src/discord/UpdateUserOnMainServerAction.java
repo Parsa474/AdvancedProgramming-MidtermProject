@@ -2,7 +2,7 @@ package discord;
 
 import java.io.IOException;
 
-public class UpdateUserOnMainServerAction extends Action {
+public class UpdateUserOnMainServerAction implements Action {
     // Fields:
     private final Model me;
 
@@ -12,7 +12,6 @@ public class UpdateUserOnMainServerAction extends Action {
     }
 
     // Methods:
-
     @Override
     public Object act() throws IOException {
         MainServer.getUsers().replace(me.getUsername(), me);

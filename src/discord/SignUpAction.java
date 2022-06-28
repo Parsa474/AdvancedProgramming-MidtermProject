@@ -3,8 +3,9 @@ package discord;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SignUpAction extends Action {
+public class SignUpAction implements Action {
 
+    // Fields:
     private String username;
     private String newUsername;     //used for changing username
     private String password;
@@ -15,18 +16,19 @@ public class SignUpAction extends Action {
     // 1-4 for getting newUser fields when signing up, 5 for finalizing the signUp
     // -1 for changing one of the fields
     private int subStage;   //only actually used for stage == 6 (subStage always equals stage)
-
     private String regex;
 
+    // Constructors:
     public SignUpAction() {
         stage = 0;
-    }
+    }       // used when signing up
 
-    public SignUpAction(String username) {
+    public SignUpAction(String username) {      //used when changing a field from the user
         this.username = username;
         this.stage = -1;
     }
 
+    // Getters:
     public String getNewUsername() {
         return newUsername;
     }
@@ -39,6 +41,7 @@ public class SignUpAction extends Action {
         return subStage;
     }
 
+    // Other Methods:
     public void finalizeStage() {
         stage = 5;
     }

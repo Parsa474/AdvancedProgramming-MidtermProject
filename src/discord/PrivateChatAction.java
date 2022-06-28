@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import static discord.ClientHandler.clientHandlers;
 
-public class PrivateChatAction extends Action {
+public class PrivateChatAction implements Action {
     // Fields:
     private String sender;
     private String message;

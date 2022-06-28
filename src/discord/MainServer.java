@@ -9,11 +9,13 @@ import java.util.concurrent.Executors;
 
 public class MainServer {
 
+    // Fields:
     private static Map<String, Model> users = Collections.synchronizedMap(new HashMap<>());
     private static Map<Integer, Server> servers = Collections.synchronizedMap(new HashMap<>());
     private final ServerSocket serverSocket;
     private final ExecutorService executorService;
 
+    // Constructors:
     public MainServer(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
         users = readUsers();
@@ -21,14 +23,7 @@ public class MainServer {
         executorService = Executors.newCachedThreadPool();
     }
 
-    private static void makeDirectory(String path) {
-        if (new File(path).exists()) return;
-        if (!new File(path).mkdir()) {
-            System.out.println("Could not create the " + path + " directory!");
-            throw new RuntimeException();
-        }
-    }
-
+    // Methods:
     private static HashMap<String, Model> readUsers() {
         makeDirectory("assets");
         makeDirectory("assets\\users");
@@ -45,19 +40,12 @@ public class MainServer {
         return clients;
     }
 
-    private static HashMap<Integer, Server> readServers() {
-        makeDirectory("assets\\servers");
-        HashMap<Integer, Server> servers = new HashMap<>();
-        File folder = new File("assets\\servers");
-        File[] listOfFiles = folder.listFiles();
-        if (listOfFiles != null)
-            for (File file : listOfFiles) {
-                Server server = read(file);
-                if (server != null)
-                    servers.put(server.getUnicode(), server);
-                else System.out.println("null user was read!");
-            }
-        return servers;
+    private static void makeDirectory(String path) {
+        if (new File(path).exists()) return;
+        if (!new File(path).mkdir()) {
+            System.out.println("Could not create the " + path + " directory!");
+            throw new RuntimeException();
+        }
     }
 
     private static <Type> Type read(File file) {
@@ -74,16 +62,28 @@ public class MainServer {
         } catch (ClassNotFoundException e) {
             System.out.println("class not found exception occurred while iterating over the users");
         } finally {
-            handleClosingInputs(fileIn, in);
+            //handleClosingInputs(fileIn, in);
+            handleClosingStreams(fileIn, in);
         }
         return null;
     }
 
-    public static Model GetUserFromServer(String username) {
-        //users.replace(username, readUser(new File("assets\\users\\" + username.concat(".bin"))));
-        return users.get(username);
+    private static HashMap<Integer, Server> readServers() {
+        makeDirectory("assets\\servers");
+        HashMap<Integer, Server> servers = new HashMap<>();
+        File folder = new File("assets\\servers");
+        File[] listOfFiles = folder.listFiles();
+        if (listOfFiles != null)
+            for (File file : listOfFiles) {
+                Server server = read(file);
+                if (server != null)
+                    servers.put(server.getUnicode(), server);
+                else System.out.println("null server was read!");
+            }
+        return servers;
     }
 
+    // Getters:
     public static Map<String, Model> getUsers() {
         return users;
     }
@@ -92,17 +92,13 @@ public class MainServer {
         return servers;
     }
 
-    private static void handleClosingInputs(FileInputStream fileIn, ObjectInputStream in) {
-        if (fileIn != null) try {
-            fileIn.close();
-        } catch (IOException e) {
-            System.out.println("I/O error occurred while closing the stream of fileOut!");
-        }
-        if (in != null) try {
-            in.close();
-        } catch (IOException e) {
-            System.out.println("I/O error occurred while closing the stream of out!");
-        }
+    // Other Methods:
+    public static Model getUserFromMainServer(String username) {
+        return users.get(username);
+    }
+
+    public static Server getServerFromMainServer(int unicode) {
+        return servers.get(unicode);
     }
 
     public void startServer() {
@@ -155,7 +151,8 @@ public class MainServer {
         } catch (IOException e) {
             System.out.println("I/O error occurred!");
         } finally {
-            handleClosingOutputs(fileOut, out);
+            //handleClosingOutputs(fileOut, out);
+            handleClosingStreams(fileOut, out);
         }
     }
 
@@ -169,7 +166,7 @@ public class MainServer {
         }
     }
 
-    private static void handleClosingOutputs(FileOutputStream fileOut, ObjectOutputStream out) {
+    /*private static void handleClosingOutputs(FileOutputStream fileOut, ObjectOutputStream out) {
         if (fileOut != null) try {
             fileOut.close();
         } catch (IOException e) {
@@ -182,9 +179,34 @@ public class MainServer {
         }
     }
 
+    private static void handleClosingInputs(FileInputStream fileIn, ObjectInputStream in) {
+        if (fileIn != null) try {
+            fileIn.close();
+        } catch (IOException e) {
+            System.out.println("I/O error occurred while closing the stream of fileOut!");
+        }
+        if (in != null) try {
+            in.close();
+        } catch (IOException e) {
+            System.out.println("I/O error occurred while closing the stream of out!");
+        }
+    }*/
+
+    private static <FileStream extends AutoCloseable, ObjectStream extends AutoCloseable> void handleClosingStreams(
+            FileStream fileStream, ObjectStream objectStream) {
+        if (fileStream != null) try {
+            fileStream.close();
+        } catch (Exception e) {
+            System.out.println("Exception occurred while closing the fileStream!");
+        }
+        if (objectStream != null) try {
+            objectStream.close();
+        } catch (Exception e) {
+            System.out.println("Exception occurred while closing the objectStream!");
+        }
+    }
+
     public static void main(String[] args) throws IOException {
-        ServerSocket serverSocket = new ServerSocket(6000);
-        MainServer mainServer = new MainServer(serverSocket);
-        mainServer.startServer();
+        new MainServer(new ServerSocket(6000)).startServer();
     }
 }
