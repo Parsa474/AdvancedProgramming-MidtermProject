@@ -1,4 +1,8 @@
-package discord;
+package actions;
+
+import mainServer.MainServer;
+import discord.Model;
+import discord.Status;
 
 public class LoginAction implements Action {
     // Fields:

@@ -1,6 +1,7 @@
-package discord;
+package actions;
 
-import java.io.IOException;
+import mainServer.MainServer;
+import discord.Model;
 
 public class UpdateUserOnMainServerAction implements Action {
     // Fields:
@@ -13,9 +14,8 @@ public class UpdateUserOnMainServerAction implements Action {
 
     // Methods:
     @Override
-    public Object act() throws IOException {
+    public Object act() {
         MainServer.getUsers().replace(me.getUsername(), me);
-        MainServer.updateDatabase(me);
-        return true;
+        return MainServer.updateDatabase(me);
     }
 }

@@ -1,4 +1,7 @@
-package discord;
+package actions;
+
+import mainServer.MainServer;
+import discord.Model;
 
 import java.util.ArrayList;
 
@@ -20,22 +23,28 @@ public class CheckFriendRequestsAction implements Action {
     @Override
     public Object act() {
         if (!MainServer.getUsers().containsKey(username)) {
-            return false;
+            return null;
         }
         Model user = MainServer.getUsers().get(username);
         String requesterUsername = user.getFriendRequests().get(index);
         Model requester = MainServer.getUsers().get(requesterUsername);
+        boolean DBConnect = true;
         if (accept) {
+
             user.getFriends().add(requesterUsername);
             requester.getFriends().add(username);
+
+
             user.getIsInChat().put(requesterUsername, false);
             user.getPrivateChats().put(requesterUsername, new ArrayList<>());
+
             requester.getIsInChat().put(username, false);
             requester.getPrivateChats().put(username, new ArrayList<>());
-            MainServer.updateDatabase(requester);
+
+            DBConnect = MainServer.updateDatabase(requester);
         }
         user.getFriendRequests().remove(index);
-        MainServer.updateDatabase(user);
-        return true;
+        DBConnect = DBConnect && MainServer.updateDatabase(user);
+        return DBConnect;
     }
 }

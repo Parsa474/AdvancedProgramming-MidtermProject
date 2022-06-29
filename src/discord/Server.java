@@ -1,18 +1,19 @@
 package discord;
 
+import actions.*;
+
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.*;
 
-public class Server implements Serializable {
+public class Server implements Asset {
 
     // Fields:
     private final int unicode;
     private String serverName;
-    private final String owner;
-    private final HashMap<String, Role> serverRoles;
-    private final HashMap<String, HashSet<Role>> members;
-    private final ArrayList<TextChannel> textChannels;
+    private String owner;
+    private HashMap<String, Role> serverRoles;
+    private HashMap<String, HashSet<Role>> members;
+    private ArrayList<TextChannel> textChannels;
 
     // Constructors:
     public Server(int unicode, String serverName, String creator) {
@@ -76,12 +77,24 @@ public class Server implements Serializable {
     public void enter(ClientController clientController) throws IOException, ClassNotFoundException {
         outer:
         while (true) {
+
             clientController.getPrinter().printServerMenu();
-            int command = MyScanner.getInt(1, 6);
+            int command = clientController.getMyScanner().getInt(1, 6);
+
+            //update server from MainServer
+            Server updatedThis = clientController.getMySocket().sendSignalAndGetResponse(new GetServerFromMainServerAction(unicode));
+            if (updatedThis == null) {
+                clientController.getPrinter().printErrorMessage("db");
+                return;
+            }
+            updateThis(updatedThis);
+
+            // get all the member's abilities
             HashSet<Ability> abilities = new HashSet<>();
             for (Role role : members.get(clientController.getUser().getUsername())) {
                 abilities.addAll(role.getAbilities());
             }
+
             switch (command) {
                 case 1 -> changeInfo(clientController, abilities);
                 case 2 -> addOrRemoveMembers(clientController, abilities);
@@ -92,9 +105,19 @@ public class Server implements Serializable {
                     break outer;
                 }
             }
-            clientController.getMySocket().write(new UpdateServerOnMainServerAction(this));
-            clientController.getMySocket().read();
+            boolean DBConnect = clientController.getMySocket().sendSignalAndGetResponse(new UpdateServerOnMainServerAction(this));
+            if (!DBConnect) {
+                clientController.getPrinter().printErrorMessage("db");
+            }
         }
+    }
+
+    private void updateThis(Server updatedThis) {
+        serverName = updatedThis.serverName;
+        owner = updatedThis.owner;
+        serverRoles = updatedThis.serverRoles;
+        members = updatedThis.members;
+        textChannels = updatedThis.textChannels;
     }
 
     private void seeAllMembersRoles() {
@@ -111,12 +134,12 @@ public class Server implements Serializable {
         outer:
         while (true) {
             clientController.getPrinter().printServerChangeInfoMenu();
-            int command = MyScanner.getInt(1, 4);
+            int command = clientController.getMyScanner().getInt(1, 4);
             switch (command) {
                 case 1 -> {
                     if (abilities.contains(Ability.ChangeServerName)) {
                         clientController.getPrinter().printGetMessage("new server name");
-                        serverName = MyScanner.getLine();
+                        serverName = clientController.getMyScanner().getLine();
                         clientController.getPrinter().printSuccessMessage("server name change");
                     } else {
                         clientController.getPrinter().printErrorMessage("server name change");
@@ -124,9 +147,9 @@ public class Server implements Serializable {
                 }
                 case 2 -> {
                     clientController.getPrinter().printTextChannelList(textChannels);
-                    int index = MyScanner.getInt(1, textChannels.size());
+                    int index = clientController.getMyScanner().getInt(1, textChannels.size());
                     clientController.getPrinter().printGetMessage("new text channel name");
-                    String newTextChannelName = MyScanner.getLine();
+                    String newTextChannelName = clientController.getMyScanner().getLine();
                     textChannels.get(index).setName(newTextChannelName);
                 }
                 case 3 -> createOrEditARole(clientController);
@@ -142,7 +165,7 @@ public class Server implements Serializable {
             outer:
             while (true) {
                 clientController.getPrinter().printRoleEditMenu();
-                switch (MyScanner.getInt(1, 3)) {
+                switch (clientController.getMyScanner().getInt(1, 3)) {
 
                     case 1 -> {
                         Role newRole = createNewRole(clientController);
@@ -151,8 +174,8 @@ public class Server implements Serializable {
                         clientController.getPrinter().println("Enter the usernames of the members you want to give this role to");
                         clientController.getPrinter().println("the usernames must be seperated by a space (invalid usernames will be ignored)");
                         clientController.getPrinter().printServerMembersList(members.keySet());
-
-                        addInitialRoleHolders(newRole);
+                        String list = clientController.getMyScanner().getLine();
+                        addInitialRoleHolders(newRole, list);
                     }
                     case 2 -> editARole();
                     case 3 -> {
@@ -170,7 +193,7 @@ public class Server implements Serializable {
         clientController.getPrinter().println("What is the name of the new role?");
         String newRoleName;
         do {
-            newRoleName = MyScanner.getLine();
+            newRoleName = clientController.getMyScanner().getLine();
         } while ("".equals(newRoleName.trim()));
         clientController.getPrinter().println("What abilities does this role have?");
         clientController.getPrinter().printAbilityList();
@@ -185,9 +208,8 @@ public class Server implements Serializable {
         return newRole;
     }
 
-    private void addInitialRoleHolders(Role newRole) {
-        String input = MyScanner.getLine();
-        String[] initialRoleHolders = input.split(" ");
+    private void addInitialRoleHolders(Role newRole, String list) {
+        String[] initialRoleHolders = list.split(" ");
         for (String member : initialRoleHolders) {
             member = member.trim();
             if (members.containsKey(member)) {
@@ -210,7 +232,7 @@ public class Server implements Serializable {
 
     private void enterATextChannel(ClientController clientController, HashSet<Ability> abilities) {
         clientController.getPrinter().printTextChannelList(textChannels);
-        int index = MyScanner.getInt(1, textChannels.size()) - 1;
+        int index = clientController.getMyScanner().getInt(1, textChannels.size()) - 1;
         textChannels.get(index).enter();
     }
 }

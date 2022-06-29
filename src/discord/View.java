@@ -21,7 +21,7 @@ public class View {
             case "IO" -> System.err.println("I/O error occurred!");
             case "yourself" -> System.err.println("You can't send a friend request to yourself!");
             case "already friend" -> System.err.println("This user is already your friend!");
-            case "friend request" -> System.err.println("Invalid username or friend request already sent!");
+            case "already sent" -> System.err.println("You have already sent a friend request to this user!");
             case "not found username" -> System.err.println("A user by this username was not found!");
             case "boundary" -> System.err.println("Out of boundary index used!");
             case "length" -> System.err.println("Invalid input length");
@@ -36,6 +36,9 @@ public class View {
             case "change fail" -> System.err.println("Could not change the field, conditions not met");
             case "server name change" ->
                     System.err.println("You don't have the permission to change the server's name!");
+            case "db" -> System.err.println("Could not connect to the database!");
+            case "unknown" -> System.err.println("An unknown error occurred!");
+            case "enter server" -> System.err.println("Could not enter the server!");
             default -> System.err.println(error);
         }
     }

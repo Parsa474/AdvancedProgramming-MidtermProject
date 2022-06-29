@@ -5,14 +5,14 @@ import java.util.Scanner;
 public class MyScanner {
 
     // Fields:
-    private final static java.util.Scanner scanner = new Scanner(System.in);
+    private final Scanner scanner = new Scanner(System.in);
 
     // Methods:
-    public static String getLine() {
+    public String getLine() {
         return scanner.nextLine();
     }
 
-    public static int getInt(int firstNum, int lastNum) {
+    public int getInt(int firstNum, int lastNum) {
         String input;
         int intInput;
         while (true) {

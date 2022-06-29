@@ -1,14 +1,17 @@
-package discord;
+package actions;
+
+import mainServer.*;
+import discord.Model;
 
 import java.io.IOException;
 
-import static discord.ClientHandler.clientHandlers;
+import static mainServer.ClientHandler.clientHandlers;
 
 public class PrivateChatAction implements Action {
     // Fields:
-    private String sender;
-    private String message;
-    private String receiver;
+    private final String sender;
+    private final String message;
+    private final String receiver;
 
     // Constructors:
     public PrivateChatAction(String sender, String message, String receiver) {
@@ -18,41 +21,22 @@ public class PrivateChatAction implements Action {
     }
 
     // Methods:
-    // Getter Methods:
-    public String getSender() {
-        return sender;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public String getReceiver() {
-        return receiver;
-    }
-
-    // Setter Methods:
-    public void setSender(String sender) {
-        this.sender = sender;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public void setReceiver(String receiver) {
-        this.receiver = receiver;
-    }
-
-    // Other Methods:
     @Override
     public Object act() throws IOException {
+
         Model senderUser = MainServer.getUsers().get(sender);
+        Model receiverUser = MainServer.getUsers().get(receiver);
+
         if (!message.equals(sender + ": #exit")) {
+
             // updating database and server
             senderUser.getPrivateChats().get(receiver).add(message); // should be checked !!!
-            Model receiverUser = MainServer.getUsers().get(receiver);
             receiverUser.getPrivateChats().get(sender).add(message);
+
+//            boolean DBConnect = MainServer.updateDatabase(senderUser) && MainServer.updateDatabase(receiverUser);
+//            if (!DBConnect) {
+//
+//            }
             MainServer.updateDatabase(senderUser);
             MainServer.updateDatabase(receiverUser);
 

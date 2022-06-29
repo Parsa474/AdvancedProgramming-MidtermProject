@@ -1,4 +1,6 @@
-package discord;
+package mainServer;
+
+import discord.*;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -35,7 +37,7 @@ public class MainServer {
                 Model user = read(file);
                 if (user != null)
                     clients.put(user.getUsername(), user);
-                else System.out.println("null user was read!");
+                else System.err.println("null user was read!");
             }
         return clients;
     }
@@ -43,12 +45,12 @@ public class MainServer {
     private static void makeDirectory(String path) {
         if (new File(path).exists()) return;
         if (!new File(path).mkdir()) {
-            System.out.println("Could not create the " + path + " directory!");
+            System.err.println("Could not create the " + path + " directory!");
             throw new RuntimeException();
         }
     }
 
-    private static <Type> Type read(File file) {
+    private static <Type extends Asset> Type read(File file) {
         FileInputStream fileIn = null;
         ObjectInputStream in = null;
         try {
@@ -56,14 +58,16 @@ public class MainServer {
             in = new ObjectInputStream(fileIn);
             return (Type) in.readObject();
         } catch (FileNotFoundException e) {
-            System.out.println("file not found while iterating over the users!");
+            System.err.println("file not found while iterating over the users!");
         } catch (IOException e) {
-            System.out.println("I/O exception occurred while iterating over the users");
+            System.err.println("I/O exception occurred while iterating over the users");
         } catch (ClassNotFoundException e) {
-            System.out.println("class not found exception occurred while iterating over the users");
+            System.err.println("class not found exception occurred while iterating over the users");
         } finally {
             //handleClosingInputs(fileIn, in);
-            handleClosingStreams(fileIn, in);
+            if (handleClosingStreams(fileIn, in)) {
+                System.err.println("(input)");
+            }
         }
         return null;
     }
@@ -78,7 +82,7 @@ public class MainServer {
                 Server server = read(file);
                 if (server != null)
                     servers.put(server.getUnicode(), server);
-                else System.out.println("null server was read!");
+                else System.err.println("null server was read!");
             }
         return servers;
     }
@@ -93,14 +97,6 @@ public class MainServer {
     }
 
     // Other Methods:
-    public static Model getUserFromMainServer(String username) {
-        return users.get(username);
-    }
-
-    public static Server getServerFromMainServer(int unicode) {
-        return servers.get(unicode);
-    }
-
     public void startServer() {
         try {
             while (!serverSocket.isClosed()) {
@@ -124,12 +120,12 @@ public class MainServer {
         }
     }
 
-    public static void signUpUser(Model newUser) {
+    public static boolean signUpUser(Model newUser) {
         users.put(newUser.getUsername(), newUser);
-        updateDatabase(newUser);
+        return updateDatabase(newUser);
     }
 
-    public static <Type> void updateDatabase(Type object) {
+    public static <Type extends Asset> boolean updateDatabase(Type object) {
         FileOutputStream fileOut = null;
         ObjectOutputStream out = null;
         try {
@@ -146,14 +142,18 @@ public class MainServer {
             fileOut = new FileOutputStream(path + "\\" + id.concat(".bin"));
             out = new ObjectOutputStream(fileOut);
             out.writeObject(object);
+            return true;
         } catch (FileNotFoundException e) {
-            System.out.println("Could not find this file!");
+            System.err.println("Could not find this file!");
         } catch (IOException e) {
-            System.out.println("I/O error occurred!");
+            System.err.println("I/O error occurred!");
         } finally {
             //handleClosingOutputs(fileOut, out);
-            handleClosingStreams(fileOut, out);
+            if (handleClosingStreams(fileOut, out)) {
+                System.err.println("(output)");
+            }
         }
+        return false;
     }
 
     public static void deleteUserFromDataBase(String username) {
@@ -162,7 +162,7 @@ public class MainServer {
         if (wantToDeleteFile.delete()) {
             System.out.println("Deleted successfully");
         } else {
-            System.out.println("Failed to delete!");
+            System.err.println("Failed to delete!");
         }
     }
 
@@ -192,18 +192,21 @@ public class MainServer {
         }
     }*/
 
-    private static <FileStream extends AutoCloseable, ObjectStream extends AutoCloseable> void handleClosingStreams(
+
+    private static <FileStream extends Closeable, ObjectStream extends Closeable> boolean handleClosingStreams(
             FileStream fileStream, ObjectStream objectStream) {
         if (fileStream != null) try {
             fileStream.close();
         } catch (Exception e) {
-            System.out.println("Exception occurred while closing the fileStream!");
+            System.err.println("Exception occurred while closing the fileStream!");
         }
         if (objectStream != null) try {
             objectStream.close();
         } catch (Exception e) {
-            System.out.println("Exception occurred while closing the objectStream!");
+            System.err.println("Exception occurred while closing the objectStream!");
+            return true;
         }
+        return false;
     }
 
     public static void main(String[] args) throws IOException {

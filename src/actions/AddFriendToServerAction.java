@@ -1,6 +1,7 @@
-package discord;
+package actions;
 
-import java.io.IOException;
+import mainServer.MainServer;
+import discord.Model;
 
 public class AddFriendToServerAction implements Action {
 
@@ -16,10 +17,9 @@ public class AddFriendToServerAction implements Action {
 
     // Methods:
     @Override
-    public Object act() throws IOException {
+    public Object act() {
         Model targetFriend = MainServer.getUsers().get(friendUsername);
         targetFriend.getServers().add(unicode);
-        MainServer.updateDatabase(targetFriend);
-        return true;
+        return MainServer.updateDatabase(targetFriend);
     }
 }

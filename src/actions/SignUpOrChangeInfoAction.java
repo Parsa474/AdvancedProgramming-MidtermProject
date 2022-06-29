@@ -1,9 +1,12 @@
-package discord;
+package actions;
+
+import mainServer.MainServer;
+import discord.Model;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SignUpAction implements Action {
+public class SignUpOrChangeInfoAction implements Action {
 
     // Fields:
     private String username;
@@ -19,11 +22,11 @@ public class SignUpAction implements Action {
     private String regex;
 
     // Constructors:
-    public SignUpAction() {
+    public SignUpOrChangeInfoAction() {
         stage = 0;
     }       // used when signing up
 
-    public SignUpAction(String username) {      //used when changing a field from the user
+    public SignUpOrChangeInfoAction(String username) {      //used when changing a field from the user
         this.username = username;
         this.stage = -1;
     }
@@ -90,6 +93,7 @@ public class SignUpAction implements Action {
     @Override
     public Object act() {
         switch (stage) {
+            // case 1-5: signing up processes
             case 1 -> {
                 return !MainServer.getUsers().containsKey(username) && isMatched(username);
             }
@@ -109,11 +113,14 @@ public class SignUpAction implements Action {
             case 5 -> {
                 if ("0".equals(phoneNumber)) phoneNumber = null;
                 Model newUser = new Model(username, password, email, phoneNumber);
-                MainServer.signUpUser(newUser);
-                return newUser;
+                if (MainServer.signUpUser(newUser)) {
+                    return newUser;
+                }
             }
+            // change one of the fields process:
             case -1 -> {
                 boolean success = false;
+                boolean DBConnect = true;
                 Model changedUser = MainServer.getUsers().get(username);
                 switch (subStage) {
                     case 1 -> {
@@ -145,9 +152,9 @@ public class SignUpAction implements Action {
                     } else {
                         MainServer.getUsers().replace(username, changedUser);
                     }
-                    MainServer.updateDatabase(changedUser);
+                    DBConnect = MainServer.updateDatabase(changedUser);
                 }
-                return success;
+                return success && DBConnect;
             }
         }
         return null;

@@ -1,6 +1,7 @@
-package discord;
+package actions;
 
-import java.io.IOException;
+import mainServer.MainServer;
+import discord.Server;
 
 public class UpdateServerOnMainServerAction implements Action {
     // Fields:
@@ -13,9 +14,8 @@ public class UpdateServerOnMainServerAction implements Action {
 
     // Methods:
     @Override
-    public Object act() throws IOException {
+    public Object act() {
         MainServer.getServers().replace(server.getUnicode(), server);
-        MainServer.updateDatabase(server);
-        return true;
+        return MainServer.updateDatabase(server);
     }
 }

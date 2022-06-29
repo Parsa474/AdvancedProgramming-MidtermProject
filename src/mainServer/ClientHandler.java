@@ -1,4 +1,7 @@
-package discord;
+package mainServer;
+
+import discord.*;
+import actions.*;
 
 import java.io.*;
 import java.net.Socket;
@@ -33,11 +36,12 @@ public class ClientHandler implements Runnable {
     public void run() {
         while (true) {
             try {
+
                 Action action;
                 // the first while loop is for signing up or logging in
                 while (user == null) {
                     action = mySocket.read();
-                    if (action instanceof LoginAction || (action instanceof SignUpAction && ((SignUpAction) action).getStage() == 5)) {
+                    if (action instanceof LoginAction || (action instanceof SignUpOrChangeInfoAction && ((SignUpOrChangeInfoAction) action).getStage() == 5)) {
                         user = (Model) action.act();
                         if (user != null) {
                             user.setStatus(Status.Online);
@@ -52,26 +56,28 @@ public class ClientHandler implements Runnable {
                 while (true) {
                     action = mySocket.read();
                     // only when logging out the action is null
-                    if (action == null) {
+                    if (action instanceof LogoutAction) {
                         user = null;
                         break;
                         // next condition is met when changing username
-                    } else if (action instanceof SignUpAction && ((SignUpAction) action).getSubStage() == 1) {
+                    } else if (action instanceof SignUpOrChangeInfoAction && ((SignUpOrChangeInfoAction) action).getSubStage() == 1) {
                         mySocket.write(action.act());
-                        user = MainServer.getUsers().get(((SignUpAction) action).getNewUsername());
+                        user = MainServer.getUsers().get(((SignUpOrChangeInfoAction) action).getNewUsername());
                         break;
                     } else {
                         // for any other action besides logging out or changing username
                         mySocket.write(action.act());
                     }
                 }
+
             } catch (IOException | ClassNotFoundException e) {
                 clientHandlers.remove(this);
                 mySocket.closeEverything();
-                if (user != null)
+                if (user != null) {
                     System.out.println("clientHandler of " + user.getUsername() + " got removed");
-                else
+                } else {
                     System.out.println("clientHandler of a not logged in client got removed");
+                }
                 break;
             }
         }

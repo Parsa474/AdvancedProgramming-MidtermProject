@@ -25,8 +25,8 @@ public class MySocket {
 
 
     // Getters:
-    public Socket getConnectionSocket() {
-        return connectionSocket;
+    public boolean isConnected() {
+        return connectionSocket.isConnected();
     }
 
     // Other Methods:
@@ -53,5 +53,10 @@ public class MySocket {
 
     public <Type> Type read() throws IOException, ClassNotFoundException {
         return (Type) objectInputStream.readObject();
+    }
+
+    public <Type> Type sendSignalAndGetResponse(Object object) throws IOException, ClassNotFoundException {
+        write(object);
+        return read();
     }
 }

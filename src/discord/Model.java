@@ -1,11 +1,10 @@
 package discord;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-public class Model implements Serializable {
+public class Model implements Asset {
 
     // Fields:
     private String username;

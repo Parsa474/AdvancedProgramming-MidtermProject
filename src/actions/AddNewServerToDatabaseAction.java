@@ -1,6 +1,7 @@
-package discord;
+package actions;
 
-import java.io.IOException;
+import mainServer.MainServer;
+import discord.Server;
 
 public class AddNewServerToDatabaseAction implements Action {
 
@@ -14,9 +15,8 @@ public class AddNewServerToDatabaseAction implements Action {
 
     // Methods:
     @Override
-    public Object act() throws IOException {
+    public Object act() {
         MainServer.getServers().put(newServer.getUnicode(), newServer);
-        MainServer.updateDatabase(newServer);
-        return true;
+        return MainServer.updateDatabase(newServer);
     }
 }

@@ -1,12 +1,15 @@
-package discord;
+package actions;
 
-public class FriendRequestAction implements Action {
+import mainServer.MainServer;
+import discord.Model;
+
+public class SendFriendRequestAction implements Action {
     // Fields:
     private final String requester;
     private final String username;
 
     // Constructors:
-    public FriendRequestAction(String requester, String username) {
+    public SendFriendRequestAction(String requester, String username) {
         this.requester = requester;
         this.username = username;
     }
@@ -15,14 +18,16 @@ public class FriendRequestAction implements Action {
     @Override
     public Object act() {
         if (!MainServer.getUsers().containsKey(username)) {
-            return false;
+            return null;
         } else {
             Model user = MainServer.getUsers().get(username);
             if (user.getFriendRequests().contains(requester)) {
                 return false;
             }
             user.getFriendRequests().add(requester);
-            MainServer.updateDatabase(user);
+            if (!MainServer.updateDatabase(user)) {
+                return null;
+            }
             return true;
         }
     }
