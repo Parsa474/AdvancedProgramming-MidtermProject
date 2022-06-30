@@ -5,7 +5,6 @@ import signals.*;
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.InvalidPropertiesFormatException;
 
 public class ClientController {
@@ -159,7 +158,7 @@ public class ClientController {
         }
     }
 
-    private Runnable listenForMessage() {
+    private Runnable getPrivateChatListener() {
         return () -> {
             Object inObject;
             while (mySocket.isConnected()) {
@@ -167,8 +166,8 @@ public class ClientController {
                     inObject = mySocket.read();
                     if (inObject instanceof DBConnectFailSignal) {
                         printer.printErrorMessage("db");
-                        synchronized (user) {
-                            user.notify();
+                        synchronized (user.getUsername()) {
+                            user.getUsername().notify();    // refer to line 235
                         }
                         break;
                     } else if (inObject instanceof String) {    // The String signals are the messages from the friend
@@ -178,8 +177,8 @@ public class ClientController {
                             printer.println("(seen)");
                         }
                     } else if (inObject instanceof Model) {
-                        synchronized (user) {
-                            user.notify();
+                        synchronized (user.getUsername()) {
+                            user.getUsername().notify();
                             user = (Model) inObject;
                         }
                         break;
@@ -215,7 +214,7 @@ public class ClientController {
         printer.printList(user.getPrivateChats().get(friendName));
 
         // receiving messages
-        Thread listener = new Thread(listenForMessage());
+        Thread listener = new Thread(getPrivateChatListener());
         listener.start();
 
         // sending message
@@ -231,9 +230,9 @@ public class ClientController {
                 printer.printErrorMessage("IO");
             }
         }
-        synchronized (user) {
+        synchronized (user.getUsername()) {
             try {
-                user.wait();
+                user.getUsername().wait();  // refer to line 170
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -369,53 +368,6 @@ public class ClientController {
         int index = myScanner.getInt(0, user.getServers().size());
         if (index != 0) {
             myServers.get(index - 1).enter(this);
-        }
-    }
-
-    public void textChannelChat(Server server, int index, HashSet<Ability> abilities) throws IOException, ClassNotFoundException {
-
-        server.getTextChannels().get(index).getMembers().replace(user.getUsername(), true);
-        server.updateThisOnMainServer(this);
-
-        TextChannel textChannel = server.getTextChannels().get(index);
-        ArrayList<String> receivers = new ArrayList<>(textChannel.getMembers().keySet());
-        receivers.remove(user.getUsername());   // remove oneself from the receivers
-
-        // printing previous messages for the people who have the access to see chat history
-        if (abilities.contains(Ability.SeeChatHistory)) {
-            printer.printList(textChannel.getMessages());
-        }
-
-        // receiving messages
-        Thread listener = new Thread(listenForMessage());
-        listener.start();
-
-        // sending message
-        printer.println("enter \"#exit\" to exit the chat");
-        while (true) {
-            String message = myScanner.getLine();
-            try {
-                mySocket.write(new TextChannelChatAction(user.getUsername(), message, server.getUnicode(), index, receivers));
-                if (message.equals("#exit")) {
-                    break;
-                }
-            } catch (IOException e) {
-                printer.printErrorMessage("IO");
-            }
-        }
-
-        synchronized (user) {
-            try {
-                user.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            textChannel = mySocket.sendSignalAndGetResponse(new UpdateTextChannelOfServerFromMainServer(server.getUnicode(), index));
-            textChannel.getMembers().replace(user.getUsername(), false);
-        }
-        boolean DBConnect = mySocket.sendSignalAndGetResponse(new UpdateTextChannelOfServerOnMainServer(server.getUnicode(), index, textChannel));
-        if (!DBConnect) {
-            printer.printErrorMessage("db");
         }
     }
 

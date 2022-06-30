@@ -48,9 +48,6 @@ public class TextChannelChatAction implements Action {
                         userOfClientHandler = MainServer.getUsers().get(userOfClientHandler.getUsername()); // updating userOfClientHandler
                         if (updatedTextChannelFromMainServer.getMembers().get(userOfClientHandler.getUsername())) {
                             // synchronize!!!!!!!
-                            //
-                            //
-                            //
                             synchronized (c.getMySocket()) {
                                 c.getMySocket().write(message); // we can also write "this" object
                             }

@@ -6,7 +6,7 @@ import java.util.LinkedList;
 
 public class Model implements Asset {
     // Fields:
-    private String username;
+    private final String username;
     private String password;
     private String email;
     private String phoneNumber;
@@ -76,10 +76,6 @@ public class Model implements Asset {
     }
 
     // Setters:
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     public void setPassword(String password) {
         this.password = password;
     }

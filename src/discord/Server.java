@@ -125,11 +125,6 @@ public class Server implements Asset {
         textChannels = updatedThis.textChannels;
     }
 
-    public TextChannel getUpdatedTextChannelFromMainServer(ClientController clientController, int index) throws IOException, ClassNotFoundException {
-        updateThisOnMainServer(clientController);
-        return textChannels.get(index);
-    }
-
     private void seeAllMembersRoles() {
         for (String username : members.keySet()) {
             HashSet<Role> roles = members.get(username);
@@ -302,8 +297,57 @@ public class Server implements Asset {
     }
 
     private void enterATextChannel(ClientController clientController, HashSet<Ability> abilities) throws IOException, ClassNotFoundException {
-        clientController.getPrinter().printTextChannelList(textChannels);
+
+        Model user = clientController.getUser();
+        View printer = clientController.getPrinter();
+        MyScanner myScanner = clientController.getMyScanner();
+        MySocket mySocket = clientController.getMySocket();
+
+        printer.printTextChannelList(textChannels);
         int index = clientController.getMyScanner().getInt(1, textChannels.size()) - 1;
-        clientController.textChannelChat(this, index, abilities);
+        TextChannel selectedTextChannel = textChannels.get(index);
+
+        selectedTextChannel.getMembers().replace(user.getUsername(), true);
+        updateThisOnMainServer(clientController);
+
+        ArrayList<String> receivers = new ArrayList<>(selectedTextChannel.getMembers().keySet());
+        receivers.remove(user.getUsername());   // remove oneself from the receivers
+
+        // printing previous messages for the people who have the access to see chat history
+        if (abilities.contains(Ability.SeeChatHistory)) {
+            printer.printList(selectedTextChannel.getMessages());
+        }
+
+        // receiving messages
+        Thread listener = new Thread(new TextChannelListener(clientController));
+        listener.start();
+
+        // sending message
+        printer.println("enter \"#exit\" to exit the chat");
+        while (true) {
+            String message = myScanner.getLine();
+            try {
+                mySocket.write(new TextChannelChatAction(user.getUsername(), message, unicode, index, receivers));
+                if (message.equals("#exit")) {
+                    break;
+                }
+            } catch (IOException e) {
+                printer.printErrorMessage("IO");
+            }
+        }
+
+        synchronized (user.getUsername()) {
+            try {
+                user.getUsername().wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            selectedTextChannel = mySocket.sendSignalAndGetResponse(new UpdateTextChannelOfServerFromMainServer(unicode, index));
+            selectedTextChannel.getMembers().replace(user.getUsername(), false);
+        }
+        boolean DBConnect = mySocket.sendSignalAndGetResponse(new UpdateTextChannelOfServerOnMainServer(unicode, index, selectedTextChannel));
+        if (!DBConnect) {
+            printer.printErrorMessage("db");
+        }
     }
 }
