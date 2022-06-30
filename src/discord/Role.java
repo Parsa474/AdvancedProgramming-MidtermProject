@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.HashSet;
 
 public class Role implements Serializable {
-
     // Fields:
     private String roleName;
     private final HashSet<Ability> abilities;

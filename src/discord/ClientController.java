@@ -1,14 +1,14 @@
 package discord;
 
-import Signals.*;
+import signals.*;
 
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.InvalidPropertiesFormatException;
 
 public class ClientController {
-
     // Fields:
     private Model user;
     private final View printer;
@@ -53,7 +53,7 @@ public class ClientController {
             // update user from the Main Server
             user = mySocket.sendSignalAndGetResponse(new GetUserFromMainServerAction(user.getUsername()));
             if (user == null) {
-                printer.printErrorMessage("Cannot recieve data from the Main Server!");
+                printer.printErrorMessage("Cannot receive data from the Main Server!");
                 break;
             }
             switch (command) {
@@ -165,10 +165,10 @@ public class ClientController {
             while (mySocket.isConnected()) {
                 try {
                     inObject = mySocket.read();
-                    if (inObject instanceof DBConnectFailSignal) {     // Main Server sends a null when database can not the connected
+                    if (inObject instanceof DBConnectFailSignal) {
                         printer.printErrorMessage("db");
-                        synchronized (user.getPrivateChats()) {
-                            user.getPrivateChats().notify();
+                        synchronized (user) {
+                            user.notify();
                         }
                         break;
                     } else if (inObject instanceof String) {    // The String signals are the messages from the friend
@@ -178,8 +178,8 @@ public class ClientController {
                             printer.println("(seen)");
                         }
                     } else if (inObject instanceof Model) {
-                        synchronized (user.getPrivateChats()) {
-                            user.getPrivateChats().notify();
+                        synchronized (user) {
+                            user.notify();
                             user = (Model) inObject;
                         }
                         break;
@@ -231,9 +231,9 @@ public class ClientController {
                 printer.printErrorMessage("IO");
             }
         }
-        synchronized (user.getPrivateChats()) {
+        synchronized (user) {
             try {
-                user.getPrivateChats().wait();
+                user.wait();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -257,6 +257,7 @@ public class ClientController {
     }
 
     private void createNewServer() throws IOException, ClassNotFoundException {
+
         String newServerName;
         do {
             printer.printGetMessage("server's name");
@@ -269,15 +270,33 @@ public class ClientController {
             }
         } while ("".equals(newServerName.trim()));
         newServerName = newServerName.trim();
+
+        // make the new server and add its unicode to the user's servers
         int unicode = mySocket.sendSignalAndGetResponse(new CreateNewServerAction());
         Server newServer = new Server(unicode, newServerName, user.getUsername());
         user.getServers().add(unicode);
-        ArrayList<String> addedFriends = addFriendsToServer(newServer);
+
+        // add the new server to the MainServer and database and update the user on the MainServer
         boolean success = mySocket.sendSignalAndGetResponse(new AddNewServerToDatabaseAction(newServer));
         if (!success) {
             printer.printErrorMessage("db");
             return;
         }
+        boolean DBConnect = mySocket.sendSignalAndGetResponse(new UpdateUserOnMainServerAction(user));
+        if (!DBConnect) {
+            printer.printErrorMessage("db");
+            return;
+        }
+
+        // add some friends to the newly made server if you want
+        ArrayList<String> addedFriends = addFriendsToServer(newServer);
+        // update the server that has new members added from the friends on the MainServer
+        DBConnect = mySocket.sendSignalAndGetResponse(new UpdateServerOnMainServerAction(newServer));
+        if (!DBConnect) {
+            printer.printErrorMessage("db");
+            return;
+        }
+        // update the friends model on the MainServer now that they're part of this new server
         for (String addedFriend : addedFriends) {
             success = mySocket.sendSignalAndGetResponse(new AddFriendToServerAction(unicode, addedFriend));
             if (!success) {
@@ -287,11 +306,9 @@ public class ClientController {
         }
         printer.println(newServerName + " added members:");
         printer.printList(addedFriends);
-        boolean DBConnect = mySocket.sendSignalAndGetResponse(new UpdateUserOnMainServerAction(user));
-        if (!DBConnect) {
-            printer.printErrorMessage("db");
-        }
-        newServer.enter(this);
+
+        Server newlyCreatedServer = mySocket.sendSignalAndGetResponse(new GetServerFromMainServerAction(unicode));
+        newlyCreatedServer.enter(this);
     }
 
     public ArrayList<String> addFriendsToServer(Server server) {
@@ -355,6 +372,53 @@ public class ClientController {
         }
     }
 
+    public void textChannelChat(Server server, int index, HashSet<Ability> abilities) throws IOException, ClassNotFoundException {
+
+        server.getTextChannels().get(index).getMembers().replace(user.getUsername(), true);
+        server.updateThisOnMainServer(this);
+
+        TextChannel textChannel = server.getTextChannels().get(index);
+        ArrayList<String> receivers = new ArrayList<>(textChannel.getMembers().keySet());
+        receivers.remove(user.getUsername());   // remove oneself from the receivers
+
+        // printing previous messages for the people who have the access to see chat history
+        if (abilities.contains(Ability.SeeChatHistory)) {
+            printer.printList(textChannel.getMessages());
+        }
+
+        // receiving messages
+        Thread listener = new Thread(listenForMessage());
+        listener.start();
+
+        // sending message
+        printer.println("enter \"#exit\" to exit the chat");
+        while (true) {
+            String message = myScanner.getLine();
+            try {
+                mySocket.write(new TextChannelChatAction(user.getUsername(), message, server.getUnicode(), index, receivers));
+                if (message.equals("#exit")) {
+                    break;
+                }
+            } catch (IOException e) {
+                printer.printErrorMessage("IO");
+            }
+        }
+
+        synchronized (user) {
+            try {
+                user.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            textChannel = mySocket.sendSignalAndGetResponse(new UpdateTextChannelOfServerFromMainServer(server.getUnicode(), index));
+            textChannel.getMembers().replace(user.getUsername(), false);
+        }
+        boolean DBConnect = mySocket.sendSignalAndGetResponse(new UpdateTextChannelOfServerOnMainServer(server.getUnicode(), index, textChannel));
+        if (!DBConnect) {
+            printer.printErrorMessage("db");
+        }
+    }
+
     private void chaneMyUserInfo() throws IOException, ClassNotFoundException {
         printer.println(user.toString());
         printer.printChangeUserMenu();
@@ -374,10 +438,6 @@ public class ClientController {
             printer.println("The status was changed successfully!");
         } else if (newField != null) {
             printer.println("The field was changed successfully!");
-            user = mySocket.sendSignalAndGetResponse(new GetUserFromMainServerAction(user.getUsername()));
-            if (user == null) {
-                printer.printErrorMessage("Lethal error: user data lost from the Main Server!");
-            }
         }
     }
 

@@ -1,4 +1,4 @@
-package Signals;
+package signals;
 
 import mainServer.*;
 import discord.Model;
@@ -8,19 +8,16 @@ import java.io.IOException;
 import static mainServer.ClientHandler.clientHandlers;
 
 public class PrivateChatAction implements Action {
-    // Fields:
     private final String sender;
     private final String message;
     private final String receiver;
 
-    // Constructors:
     public PrivateChatAction(String sender, String message, String receiver) {
         this.sender = sender;
         this.message = sender + ": " + message;
         this.receiver = receiver;
     }
 
-    // Methods:
     @Override
     public Object act() throws IOException {
 

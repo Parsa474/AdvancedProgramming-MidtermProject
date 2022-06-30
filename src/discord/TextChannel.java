@@ -6,8 +6,6 @@ import java.util.HashMap;
 
 public class TextChannel implements Serializable {
     // Fields:
-    private final int serverUnicode;
-    private final int id;
     private String name;
     private final HashMap<String, Boolean> members;
     // maps all the members' username to whether they're in this text channel right now (true) or not (false)
@@ -15,9 +13,7 @@ public class TextChannel implements Serializable {
     // holds all the messages exchanged in this text channel
 
     // Constructors:
-    public TextChannel(int serverUnicode, int id, String name, ArrayList<String> members, ArrayList<String> messages) {
-        this.serverUnicode = serverUnicode;
-        this.id = id;
+    public TextChannel(String name, ArrayList<String> members, ArrayList<String> messages) {
         this.name = name;
         this.members = new HashMap<>();
         for (String member : members) {
@@ -27,14 +23,6 @@ public class TextChannel implements Serializable {
     }
 
     // Getters:
-    public int getServerUnicode() {
-        return serverUnicode;
-    }
-
-    public int getId() {
-        return id;
-    }
-
     public String getName() {
         return name;
     }
@@ -50,10 +38,5 @@ public class TextChannel implements Serializable {
     // Setters:
     public void setName(String name) {
         this.name = name;
-    }
-
-    // Other Methods:
-    public void enter() {
-
     }
 }

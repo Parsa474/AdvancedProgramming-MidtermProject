@@ -1,21 +1,18 @@
-package Signals;
+package signals;
 
 import mainServer.MainServer;
 import discord.Model;
 import discord.Status;
 
 public class LoginAction implements Action {
-    // Fields:
     private final String username;
     private final String password;
 
-    // Constructors:
     public LoginAction(String username, String password) {
         this.username = username;
         this.password = password;
     }
 
-    // Methods:
     @Override
     public Object act() {
         if (!MainServer.getUsers().containsKey(username)) {

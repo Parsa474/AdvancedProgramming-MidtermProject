@@ -3,11 +3,8 @@ package discord;
 import java.util.Scanner;
 
 public class MyScanner {
-
-    // Fields:
     private final Scanner scanner = new Scanner(System.in);
 
-    // Methods:
     public String getLine() {
         return scanner.nextLine();
     }

@@ -5,7 +5,6 @@ import java.util.LinkedList;
 import java.util.Set;
 
 public class View {
-
     public void println(String message) {
         System.out.println(message);
     }

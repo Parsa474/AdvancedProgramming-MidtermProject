@@ -6,7 +6,6 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 public class MySocket {
-
     // Fields:
     private final Socket connectionSocket;
     private ObjectOutputStream objectOutputStream;
@@ -22,7 +21,6 @@ public class MySocket {
             e.printStackTrace();
         }
     }
-
 
     // Getters:
     public boolean isConnected() {

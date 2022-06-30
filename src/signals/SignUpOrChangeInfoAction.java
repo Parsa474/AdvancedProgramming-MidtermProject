@@ -1,4 +1,4 @@
-package Signals;
+package signals;
 
 import mainServer.MainServer;
 import discord.Model;
@@ -6,7 +6,6 @@ import discord.Model;
 import java.util.regex.Pattern;
 
 public class SignUpOrChangeInfoAction implements Action {
-
     // Fields:
     private String username;
     private String password;
@@ -30,7 +29,6 @@ public class SignUpOrChangeInfoAction implements Action {
     }
 
     // Getters:
-
     public int getStage() {
         return stage;
     }
@@ -41,10 +39,8 @@ public class SignUpOrChangeInfoAction implements Action {
     }
 
     public void setUsername(String username) {
-        if (stage == 0) {
-            this.username = username;
-            stage = 1;
-        }
+        this.username = username;
+        stage = 1;
         regex = "^\\w{6,}$";
     }
 

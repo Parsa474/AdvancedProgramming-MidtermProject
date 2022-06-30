@@ -1,20 +1,17 @@
-package Signals;
+package signals;
 
 import mainServer.MainServer;
 import discord.Model;
 
 public class SendFriendRequestAction implements Action {
-    // Fields:
     private final String requester;
     private final String username;
 
-    // Constructors:
     public SendFriendRequestAction(String requester, String username) {
         this.requester = requester;
         this.username = username;
     }
 
-    // Methods:
     @Override
     public Object act() {
         if (!MainServer.getUsers().containsKey(username)) {

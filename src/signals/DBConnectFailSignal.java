@@ -1,4 +1,4 @@
-package Signals;
+package signals;
 
 public class DBConnectFailSignal {
 }

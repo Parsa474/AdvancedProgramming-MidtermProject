@@ -1,10 +1,8 @@
-package Signals;
+package signals;
 
 import mainServer.MainServer;
 
 public class CreateNewServerAction implements Action {
-
-    // Methods:
     @Override
     public Object act() {
         int unicode = 0;

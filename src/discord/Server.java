@@ -1,12 +1,11 @@
 package discord;
 
-import Signals.*;
+import signals.*;
 
 import java.io.IOException;
 import java.util.*;
 
 public class Server implements Asset {
-
     // Fields:
     private final int unicode;
     private String serverName;
@@ -25,8 +24,8 @@ public class Server implements Asset {
         members = new HashMap<>();
         textChannels = new ArrayList<>();
 
-        //a member role without any ability is added to the roles of the server
-        Role memberRole = new Role("member", new HashSet<>());
+        //a "member" role with just the SeeChatHistory Ability is added to the roles of the server
+        Role memberRole = new Role("member", new HashSet<>(List.of(Ability.SeeChatHistory)));
         serverRoles.put(memberRole.getRoleName(), memberRole);
 
         //give the owner an "ownerRole" (containing all the abilities), as well as the member role
@@ -39,7 +38,7 @@ public class Server implements Asset {
         ArrayList<String> generalMembers = new ArrayList<>(Collections.singletonList(creator));
 
         //initialize the first default text channel called general
-        textChannels.add(new TextChannel(unicode, 0, "general", generalMembers, new ArrayList<>()));
+        textChannels.add(new TextChannel("general", generalMembers, new ArrayList<>()));
     }
 
     // Getters:
@@ -69,8 +68,10 @@ public class Server implements Asset {
 
     // Other Methods:
     public void addNewMember(String username) {
+
         members.put(username, new HashSet<>());                    //new HashSet of roles they may have
         members.get(username).add(serverRoles.get("member"));      //anyone gets the "member" role at first
+
         textChannels.get(0).getMembers().put(username, false);     //anyone gets added to the general text channel
     }
 
@@ -109,7 +110,7 @@ public class Server implements Asset {
         }
     }
 
-    private void updateThisOnMainServer(ClientController clientController) throws IOException, ClassNotFoundException {
+    public void updateThisOnMainServer(ClientController clientController) throws IOException, ClassNotFoundException {
         boolean DBConnect = clientController.getMySocket().sendSignalAndGetResponse(new UpdateServerOnMainServerAction(this));
         if (!DBConnect) {
             clientController.getPrinter().printErrorMessage("db");
@@ -122,6 +123,11 @@ public class Server implements Asset {
         serverRoles = updatedThis.serverRoles;
         members = updatedThis.members;
         textChannels = updatedThis.textChannels;
+    }
+
+    public TextChannel getUpdatedTextChannelFromMainServer(ClientController clientController, int index) throws IOException, ClassNotFoundException {
+        updateThisOnMainServer(clientController);
+        return textChannels.get(index);
     }
 
     private void seeAllMembersRoles() {
@@ -295,9 +301,9 @@ public class Server implements Asset {
 
     }
 
-    private void enterATextChannel(ClientController clientController, HashSet<Ability> abilities) {
+    private void enterATextChannel(ClientController clientController, HashSet<Ability> abilities) throws IOException, ClassNotFoundException {
         clientController.getPrinter().printTextChannelList(textChannels);
         int index = clientController.getMyScanner().getInt(1, textChannels.size()) - 1;
-        textChannels.get(index).enter();
+        clientController.textChannelChat(this, index, abilities);
     }
 }

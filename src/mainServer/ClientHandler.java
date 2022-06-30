@@ -1,7 +1,7 @@
 package mainServer;
 
 import discord.*;
-import Signals.*;
+import signals.*;
 
 import java.io.*;
 import java.net.Socket;
@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.List;
 
 public class ClientHandler implements Runnable {
-
     // Fields:
     public static List<ClientHandler> clientHandlers = Collections.synchronizedList(new ArrayList<>());
     private Model user;
@@ -36,7 +35,6 @@ public class ClientHandler implements Runnable {
     public void run() {
         while (true) {
             try {
-
                 Action action;
                 // the first while loop is for signing up or logging in
                 while (user == null) {
@@ -51,20 +49,17 @@ public class ClientHandler implements Runnable {
                         mySocket.write(action.act());
                     }
                 }
-
                 // the second while loop is for any other action after logging in or signing up
                 while (true) {
                     action = mySocket.read();
-                    // only when logging out the action is null
                     if (action instanceof LogoutAction) {
                         user = null;
                         break;
                     } else {
-                        // for any other action besides logging out or changing username
+                        // for any other action besides logging out
                         mySocket.write(action.act());
                     }
                 }
-
             } catch (IOException | ClassNotFoundException e) {
                 clientHandlers.remove(this);
                 mySocket.closeEverything();

@@ -10,7 +10,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainServer {
-
     // Fields:
     private static Map<String, Model> users = Collections.synchronizedMap(new HashMap<>());
     // maps the users' username to their Model object
@@ -127,23 +126,23 @@ public class MainServer {
         return updateDatabase(newUser);
     }
 
-    public static <Type extends Asset> boolean updateDatabase(Type object) {
+    public static <Type extends Asset> boolean updateDatabase(Type asset) {
         FileOutputStream fileOut = null;
         ObjectOutputStream out = null;
         try {
             String path = "assets\\";
             String id = "";
-            if (object instanceof Model) {
-                id = ((Model) object).getUsername();
+            if (asset instanceof Model) {
+                id = ((Model) asset).getUsername();
                 path = path.concat("users");
             }
-            if (object instanceof Server) {
-                id = ((Server) object).getUnicode() + "";
+            if (asset instanceof Server) {
+                id = ((Server) asset).getUnicode() + "";
                 path = path.concat("servers");
             }
             fileOut = new FileOutputStream(path + "\\" + id.concat(".bin"));
             out = new ObjectOutputStream(fileOut);
-            out.writeObject(object);
+            out.writeObject(asset);
             return true;
         } catch (FileNotFoundException e) {
             System.err.println("Could not find this file!");
@@ -156,16 +155,6 @@ public class MainServer {
             }
         }
         return false;
-    }
-
-    public static void deleteUserFromDataBase(String username) {
-        String path = "assets\\users\\" + username.concat(".bin");
-        File wantToDeleteFile = new File(path);
-        if (wantToDeleteFile.delete()) {
-            System.out.println("Deleted successfully");
-        } else {
-            System.err.println("Failed to delete!");
-        }
     }
 
     /*private static void handleClosingOutputs(FileOutputStream fileOut, ObjectOutputStream out) {

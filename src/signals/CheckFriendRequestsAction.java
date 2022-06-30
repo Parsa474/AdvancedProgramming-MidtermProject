@@ -1,4 +1,4 @@
-package Signals;
+package signals;
 
 import mainServer.MainServer;
 import discord.Model;
@@ -6,20 +6,16 @@ import discord.Model;
 import java.util.ArrayList;
 
 public class CheckFriendRequestsAction implements Action {
-
-    // Fields:
     private final String username;
     private final int index;
     private final boolean accept;
 
-    // Constructors:
     public CheckFriendRequestsAction(String username, int index, boolean accept) {
         this.username = username;
         this.index = index;
         this.accept = accept;
     }
 
-    // Methods:
     @Override
     public Object act() {
         if (!MainServer.getUsers().containsKey(username)) {

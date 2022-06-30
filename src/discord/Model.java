@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 public class Model implements Asset {
-
     // Fields:
     private String username;
     private String password;
