@@ -68,10 +68,7 @@ public class Server implements Asset {
 
     // Other Methods:
     public void addNewMember(String username) {
-
-        members.put(username, new HashSet<>());                    //new HashSet of roles they may have
-        members.get(username).add(serverRoles.get("member"));      //anyone gets the "member" role at first
-
+        members.put(username, new HashSet<>(List.of(serverRoles.get("member"))));  // anyone gets the "member" role
         textChannels.get(0).getMembers().put(username, false);     //anyone gets added to the general text channel
     }
 
@@ -98,7 +95,7 @@ public class Server implements Asset {
 
             switch (command) {
                 case 1 -> changeInfo(clientController, abilities);
-                case 2 -> addOrRemoveMembers(clientController, abilities);
+                case 2 -> addOrRemoveMembers(clientController, abilities);  //to do: send signals for the added friends
                 case 3 -> addOrRemoveTextChannels(clientController, abilities);
                 case 4 -> enterATextChannel(clientController, abilities);
                 case 5 -> seeAllMembersRoles();
@@ -184,30 +181,22 @@ public class Server implements Asset {
         }
     }
 
-    private void createOrEditARole(ClientController clientController) throws IOException, ClassNotFoundException {
-        outer:
-        while (true) {
-            clientController.getPrinter().printRoleEditMenu();
-            switch (clientController.getMyScanner().getInt(1, 3)) {
-
-                case 1 -> {
-                    Role newRole = createNewRole(clientController);
-                    clientController.getPrinter().println("Enter the usernames of the members you want to give this role to");
-                    clientController.getPrinter().println("the usernames must be seperated by a space (invalid usernames will be ignored)");
-                    clientController.getPrinter().printHashMapList(members.keySet());
-                    clientController.getPrinter().printGoBackMessage();
-                    String list = clientController.getMyScanner().getLine();
-                    if ("".equals(list)) {
-                        break;
-                    }
-                    addInitialRoleHolders(newRole, list);
+    private void createOrEditARole(ClientController clientController) {
+        clientController.getPrinter().printRoleEditMenu();
+        switch (clientController.getMyScanner().getInt(1, 3)) {
+            case 1 -> {
+                Role newRole = createNewRole(clientController);
+                clientController.getPrinter().println("Enter the usernames of the members you want to give this role to");
+                clientController.getPrinter().println("the usernames must be seperated by a space (invalid usernames will be ignored)");
+                clientController.getPrinter().printHashMapList(members.keySet());
+                clientController.getPrinter().printGoBackMessage();
+                String list = clientController.getMyScanner().getLine();
+                if ("".equals(list)) {
+                    break;
                 }
-                case 2 -> editARole(clientController);
-                case 3 -> {
-                    break outer;
-                }
+                addInitialRoleHolders(newRole, list);
             }
-            updateThisOnMainServer(clientController);
+            case 2 -> editARole(clientController);
         }
     }
 
@@ -273,10 +262,9 @@ public class Server implements Asset {
         int command = clientController.getMyScanner().getInt(1, 3);
         switch (command) {
             case 1 -> {
-                ArrayList<String> addedFriends = clientController.addFriendsToServer(this);
-                clientController.getPrinter().printList(addedFriends);
-                clientController.getPrinter().println("are added successfully!");
-                updateThisOnMainServer(clientController);
+                if (clientController.addFriendsToServer(this)) {
+                    clientController.getPrinter().printSuccessMessage("friend add");
+                }
             }
             case 2 -> {
                 if (abilities.contains(Ability.RemoveMember)) {
@@ -286,6 +274,7 @@ public class Server implements Asset {
                 }
             }
         }
+        updateThisOnMainServer(clientController);
     }
 
     private void removeMembersFromServer() {

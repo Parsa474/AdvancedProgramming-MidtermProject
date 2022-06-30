@@ -276,41 +276,34 @@ public class ClientController {
         user.getServers().add(unicode);
 
         // add the new server to the MainServer and database and update the user on the MainServer
-        boolean success = mySocket.sendSignalAndGetResponse(new AddNewServerToDatabaseAction(newServer));
-        if (!success) {
-            printer.printErrorMessage("db");
-            return;
-        }
-        boolean DBConnect = mySocket.sendSignalAndGetResponse(new UpdateUserOnMainServerAction(user));
+        boolean DBConnect = mySocket.sendSignalAndGetResponse(new AddNewServerToDatabaseAction(newServer));
         if (!DBConnect) {
             printer.printErrorMessage("db");
             return;
         }
-
+        DBConnect = mySocket.sendSignalAndGetResponse(new UpdateUserOnMainServerAction(user));
+        if (!DBConnect) {
+            printer.printErrorMessage("db");
+            return;
+        }
         // add some friends to the newly made server if you want
-        ArrayList<String> addedFriends = addFriendsToServer(newServer);
+        DBConnect = addFriendsToServer(newServer);
+        if (!DBConnect) {
+            printer.printErrorMessage("db");
+            return;
+        }
         // update the server that has new members added from the friends on the MainServer
         DBConnect = mySocket.sendSignalAndGetResponse(new UpdateServerOnMainServerAction(newServer));
         if (!DBConnect) {
             printer.printErrorMessage("db");
             return;
         }
-        // update the friends model on the MainServer now that they're part of this new server
-        for (String addedFriend : addedFriends) {
-            success = mySocket.sendSignalAndGetResponse(new AddFriendToServerAction(unicode, addedFriend));
-            if (!success) {
-                printer.printErrorMessage("db");
-                return;
-            }
-        }
-        printer.println(newServerName + " added members:");
-        printer.printList(addedFriends);
 
         Server newlyCreatedServer = mySocket.sendSignalAndGetResponse(new GetServerFromMainServerAction(unicode));
         newlyCreatedServer.enter(this);
     }
 
-    public ArrayList<String> addFriendsToServer(Server server) {
+    public boolean addFriendsToServer(Server server) throws IOException, ClassNotFoundException {
         printer.println("Who do you want to add to the server?");
         printer.println("enter the indexes seperated by a space!");
         printer.printList(user.getFriends());
@@ -321,7 +314,15 @@ public class ClientController {
             server.addNewMember(friendUsername);
             addedFriends.add(friendUsername);
         }
-        return addedFriends;
+
+        for (String addedFriend : addedFriends) {
+            boolean DBConnect = mySocket.sendSignalAndGetResponse(new AddFriendToServerAction(server.getUnicode(), addedFriend));
+            if (!DBConnect) {
+                printer.printErrorMessage("db");
+                return false;
+            }
+        }
+        return true;
     }
 
     public ArrayList<Integer> getIntList(int max) {

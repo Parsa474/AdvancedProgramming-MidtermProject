@@ -85,6 +85,7 @@ public class View {
             case "new role" -> System.out.println("The new role was created successfully!");
             case "edit role" -> System.out.println("The role was edited successfully!");
             case "server name change" -> System.out.println("The server's name was changed successfully!");
+            case "friend add" -> System.out.println("The selected friends were added to the server successfully!");
         }
     }
 
