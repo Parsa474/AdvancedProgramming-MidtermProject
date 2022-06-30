@@ -25,7 +25,7 @@ public class Server implements Asset {
         textChannels = new ArrayList<>();
 
         //a "member" role with just the SeeChatHistory Ability is added to the roles of the server
-        Role memberRole = new Role("member", new HashSet<>(List.of(Ability.SeeChatHistory)));
+        Role memberRole = new Role("member", new HashSet<>(List.of(Ability.SeeChatHistory, Ability.PinMessage)));
         serverRoles.put(memberRole.getRoleName(), memberRole);
 
         //give the owner an "ownerRole" (containing all the abilities), as well as the member role
