@@ -1,6 +1,6 @@
 package discord;
 
-import actions.*;
+import Signals.*;
 
 import java.io.IOException;
 import java.util.*;
@@ -11,8 +11,8 @@ public class Server implements Asset {
     private final int unicode;
     private String serverName;
     private String owner;
-    private HashMap<String, Role> serverRoles;
-    private HashMap<String, HashSet<Role>> members;
+    private HashMap<String, Role> serverRoles;      // maps the roles' names to their Role object
+    private HashMap<String, HashSet<Role>> members;     // maps the members' username to their set of roles
     private ArrayList<TextChannel> textChannels;
 
     // Constructors:
@@ -87,7 +87,7 @@ public class Server implements Asset {
                 clientController.getPrinter().printErrorMessage("db");
                 return;
             }
-            updateThis(updatedThis);
+            updateThisFromMainServer(updatedThis);
 
             // get all the member's abilities
             HashSet<Ability> abilities = new HashSet<>();
@@ -105,14 +105,18 @@ public class Server implements Asset {
                     break outer;
                 }
             }
-            boolean DBConnect = clientController.getMySocket().sendSignalAndGetResponse(new UpdateServerOnMainServerAction(this));
-            if (!DBConnect) {
-                clientController.getPrinter().printErrorMessage("db");
-            }
+            //updateThisOnMainServer(clientController);
         }
     }
 
-    private void updateThis(Server updatedThis) {
+    private void updateThisOnMainServer(ClientController clientController) throws IOException, ClassNotFoundException {
+        boolean DBConnect = clientController.getMySocket().sendSignalAndGetResponse(new UpdateServerOnMainServerAction(this));
+        if (!DBConnect) {
+            clientController.getPrinter().printErrorMessage("db");
+        }
+    }
+
+    private void updateThisFromMainServer(Server updatedThis) {
         serverName = updatedThis.serverName;
         owner = updatedThis.owner;
         serverRoles = updatedThis.serverRoles;
@@ -130,7 +134,7 @@ public class Server implements Asset {
         }
     }
 
-    private void changeInfo(ClientController clientController, HashSet<Ability> abilities) {
+    private void changeInfo(ClientController clientController, HashSet<Ability> abilities) throws IOException, ClassNotFoundException {
         outer:
         while (true) {
             clientController.getPrinter().printServerChangeInfoMenu();
@@ -139,53 +143,70 @@ public class Server implements Asset {
                 case 1 -> {
                     if (abilities.contains(Ability.ChangeServerName)) {
                         clientController.getPrinter().printGetMessage("new server name");
+                        clientController.getPrinter().printGoBackMessage();
                         serverName = clientController.getMyScanner().getLine();
+                        if ("".equals(serverName)) {
+                            break;
+                        }
                         clientController.getPrinter().printSuccessMessage("server name change");
                     } else {
                         clientController.getPrinter().printErrorMessage("server name change");
                     }
                 }
                 case 2 -> {
-                    clientController.getPrinter().printTextChannelList(textChannels);
-                    int index = clientController.getMyScanner().getInt(1, textChannels.size());
-                    clientController.getPrinter().printGetMessage("new text channel name");
-                    String newTextChannelName = clientController.getMyScanner().getLine();
-                    textChannels.get(index).setName(newTextChannelName);
+                    if (abilities.contains(Ability.Owner)) {
+                        clientController.getPrinter().printTextChannelList(textChannels);
+                        clientController.getPrinter().println("enter 0 to go back");
+                        int index = clientController.getMyScanner().getInt(0, textChannels.size());
+                        if (index == 0) {
+                            break;
+                        }
+                        clientController.getPrinter().printGetMessage("new text channel name");
+                        String newTextChannelName = clientController.getMyScanner().getLine();
+                        textChannels.get(index - 1).setName(newTextChannelName);
+                    } else {
+                        clientController.getPrinter().printErrorMessage("only the owner can make this change!");
+                    }
                 }
-                case 3 -> createOrEditARole(clientController);
+                case 3 -> {
+                    if (abilities.contains(Ability.Owner)) {
+                        createOrEditARole(clientController);
+                    } else {
+                        clientController.getPrinter().printErrorMessage("Only the owner can access this part!");
+                    }
+                }
                 case 4 -> {
                     break outer;
                 }
             }
+            updateThisOnMainServer(clientController);
         }
     }
 
-    private void createOrEditARole(ClientController clientController) {
-        if (clientController.getUser().getUsername().equals(owner)) {
-            outer:
-            while (true) {
-                clientController.getPrinter().printRoleEditMenu();
-                switch (clientController.getMyScanner().getInt(1, 3)) {
+    private void createOrEditARole(ClientController clientController) throws IOException, ClassNotFoundException {
+        outer:
+        while (true) {
+            clientController.getPrinter().printRoleEditMenu();
+            switch (clientController.getMyScanner().getInt(1, 3)) {
 
-                    case 1 -> {
-                        Role newRole = createNewRole(clientController);
-
-
-                        clientController.getPrinter().println("Enter the usernames of the members you want to give this role to");
-                        clientController.getPrinter().println("the usernames must be seperated by a space (invalid usernames will be ignored)");
-                        clientController.getPrinter().printServerMembersList(members.keySet());
-                        String list = clientController.getMyScanner().getLine();
-                        addInitialRoleHolders(newRole, list);
+                case 1 -> {
+                    Role newRole = createNewRole(clientController);
+                    clientController.getPrinter().println("Enter the usernames of the members you want to give this role to");
+                    clientController.getPrinter().println("the usernames must be seperated by a space (invalid usernames will be ignored)");
+                    clientController.getPrinter().printHashMapList(members.keySet());
+                    clientController.getPrinter().printGoBackMessage();
+                    String list = clientController.getMyScanner().getLine();
+                    if ("".equals(list)) {
+                        break;
                     }
-                    case 2 -> editARole();
-                    case 3 -> {
-                        break outer;
-                    }
+                    addInitialRoleHolders(newRole, list);
+                }
+                case 2 -> editARole(clientController);
+                case 3 -> {
+                    break outer;
                 }
             }
-
-        } else {
-            clientController.getPrinter().println("Only the owner can create a new role!");
+            updateThisOnMainServer(clientController);
         }
     }
 
@@ -198,10 +219,10 @@ public class Server implements Asset {
         clientController.getPrinter().println("What abilities does this role have?");
         clientController.getPrinter().printAbilityList();
         clientController.getPrinter().println("(enter the numbers seperated by a space)");
-        ArrayList<Integer> abilityIndexes = clientController.getIntList(8);
+        ArrayList<Integer> abilityIndexes = clientController.getIntList(8); // indexes received range: 0-7
         Role newRole = new Role(newRoleName, new HashSet<>());
         for (int abilityIndex : abilityIndexes) {
-            newRole.getAbilities().add(Ability.values()[abilityIndex]);
+            newRole.getAbilities().add(Ability.values()[abilityIndex + 1]); // ability 0 is only for the owner
         }
         serverRoles.put(newRole.getRoleName(), newRole);
         clientController.getPrinter().printSuccessMessage("new role");
@@ -218,11 +239,55 @@ public class Server implements Asset {
         }
     }
 
-    private void editARole() {
-
+    private void editARole(ClientController clientController) {
+        clientController.getPrinter().printGetMessage("enter the name of the role you want to edit");
+        clientController.getPrinter().printHashMapList(serverRoles.keySet());
+        clientController.getPrinter().printGoBackMessage();
+        String roleName;
+        while (true) {
+            roleName = clientController.getMyScanner().getLine();
+            if ("".equals(roleName)) {
+                return;
+            }
+            if (serverRoles.containsKey(roleName)) {
+                break;
+            } else {
+                clientController.getPrinter().printErrorMessage("Invalid name!");
+            }
+        }
+        clientController.getPrinter().println("What abilities will this role have after the change?");
+        clientController.getPrinter().printAbilityList();
+        clientController.getPrinter().println("(enter the numbers seperated by a space)");
+        ArrayList<Integer> abilityIndexes = clientController.getIntList(8); // indexes received range: 0-7
+        Role roleUnderEdit = serverRoles.get(roleName);
+        roleUnderEdit.getAbilities().clear();
+        for (int abilityIndex : abilityIndexes) {
+            roleUnderEdit.getAbilities().add(Ability.values()[abilityIndex + 1]); // ability 0 is only for the owner
+        }
+        clientController.getPrinter().printSuccessMessage("edit role");
     }
 
-    private void addOrRemoveMembers(ClientController clientController, HashSet<Ability> abilities) {
+    private void addOrRemoveMembers(ClientController clientController, HashSet<Ability> abilities) throws IOException, ClassNotFoundException {
+        clientController.getPrinter().printMemberEditMenu();
+        int command = clientController.getMyScanner().getInt(1, 3);
+        switch (command) {
+            case 1 -> {
+                ArrayList<String> addedFriends = clientController.addFriendsToServer(this);
+                clientController.getPrinter().printList(addedFriends);
+                clientController.getPrinter().println("are added successfully!");
+                updateThisOnMainServer(clientController);
+            }
+            case 2 -> {
+                if (abilities.contains(Ability.RemoveMember)) {
+                    removeMembersFromServer();
+                } else {
+                    clientController.getPrinter().printErrorMessage("permission");
+                }
+            }
+        }
+    }
+
+    private void removeMembersFromServer() {
 
     }
 

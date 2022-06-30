@@ -10,7 +10,9 @@ public class TextChannel implements Serializable {
     private final int id;
     private String name;
     private final HashMap<String, Boolean> members;
+    // maps all the members' username to whether they're in this text channel right now (true) or not (false)
     private final ArrayList<String> messages;
+    // holds all the messages exchanged in this text channel
 
     // Constructors:
     public TextChannel(int serverUnicode, int id, String name, ArrayList<String> members, ArrayList<String> messages) {

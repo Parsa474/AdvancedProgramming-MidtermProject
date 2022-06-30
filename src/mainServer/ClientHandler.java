@@ -1,7 +1,7 @@
 package mainServer;
 
 import discord.*;
-import actions.*;
+import Signals.*;
 
 import java.io.*;
 import java.net.Socket;
@@ -41,7 +41,7 @@ public class ClientHandler implements Runnable {
                 // the first while loop is for signing up or logging in
                 while (user == null) {
                     action = mySocket.read();
-                    if (action instanceof LoginAction || (action instanceof SignUpOrChangeInfoAction && ((SignUpOrChangeInfoAction) action).getStage() == 5)) {
+                    if (action instanceof LoginAction || ((action instanceof SignUpOrChangeInfoAction && ((SignUpOrChangeInfoAction) action).getStage() == 5))) {
                         user = (Model) action.act();
                         if (user != null) {
                             user.setStatus(Status.Online);
@@ -58,11 +58,6 @@ public class ClientHandler implements Runnable {
                     // only when logging out the action is null
                     if (action instanceof LogoutAction) {
                         user = null;
-                        break;
-                        // next condition is met when changing username
-                    } else if (action instanceof SignUpOrChangeInfoAction && ((SignUpOrChangeInfoAction) action).getSubStage() == 1) {
-                        mySocket.write(action.act());
-                        user = MainServer.getUsers().get(((SignUpOrChangeInfoAction) action).getNewUsername());
                         break;
                     } else {
                         // for any other action besides logging out or changing username

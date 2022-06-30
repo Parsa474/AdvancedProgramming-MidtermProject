@@ -1,4 +1,4 @@
-package actions;
+package Signals;
 
 import mainServer.MainServer;
 

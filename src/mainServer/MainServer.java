@@ -13,7 +13,9 @@ public class MainServer {
 
     // Fields:
     private static Map<String, Model> users = Collections.synchronizedMap(new HashMap<>());
+    // maps the users' username to their Model object
     private static Map<Integer, Server> servers = Collections.synchronizedMap(new HashMap<>());
+    // maps the servers' unicode to their Server object
     private final ServerSocket serverSocket;
     private final ExecutorService executorService;
 

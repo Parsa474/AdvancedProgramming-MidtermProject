@@ -1,10 +1,11 @@
 package discord;
 
-import actions.*;
+import Signals.*;
 
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.InvalidPropertiesFormatException;
 
 public class ClientController {
 
@@ -48,7 +49,7 @@ public class ClientController {
         outer:
         while (true) {
             printer.printLoggedInMenu();
-            int command = myScanner.getInt(1, 7);
+            int command = myScanner.getInt(1, 8);
             // update user from the Main Server
             user = mySocket.sendSignalAndGetResponse(new GetUserFromMainServerAction(user.getUsername()));
             if (user == null) {
@@ -67,6 +68,7 @@ public class ClientController {
                     user = null;
                     break outer;
                 }
+                case 8 -> System.exit(0);
             }
         }
     }
@@ -98,7 +100,7 @@ public class ClientController {
                     }
                     break;
                 } else {
-                    printer.printErrorMessage("Not found username");
+                    printer.printErrorMessage("not found username");
                     printer.printErrorMessage("(Or could not connect to the database)");
                 }
             }
@@ -158,34 +160,37 @@ public class ClientController {
     }
 
     private Runnable listenForMessage() {
-        return new Runnable() {
-            @Override
-            public void run() {
-                Object inObject;
-                while (mySocket.isConnected()) {
-                    try {
-                        inObject = mySocket.read();
-                        if (inObject instanceof String) {
-                            printer.println((String) inObject);
-                        } else if (inObject instanceof Boolean) {
-                            if ((Boolean) inObject) {   // true if seen by the friend immediately
-                                printer.println("(seen)");
-                            }
-                        } else if (inObject instanceof Model) {
-                            synchronized (user.getPrivateChats()) {
-                                user.getPrivateChats().notify();
-                                user = (Model) inObject;
-                            }
-                            break;
+        return () -> {
+            Object inObject;
+            while (mySocket.isConnected()) {
+                try {
+                    inObject = mySocket.read();
+                    if (inObject instanceof DBConnectFailSignal) {     // Main Server sends a null when database can not the connected
+                        printer.printErrorMessage("db");
+                        synchronized (user.getPrivateChats()) {
+                            user.getPrivateChats().notify();
                         }
-                    } catch (IOException | ClassNotFoundException e) {
-                        e.printStackTrace();
-                        mySocket.closeEverything();
+                        break;
+                    } else if (inObject instanceof String) {    // The String signals are the messages from the friend
+                        printer.println((String) inObject);
+                    } else if (inObject instanceof Boolean) {
+                        if ((Boolean) inObject) {    // true if seen by the friend immediately
+                            printer.println("(seen)");
+                        }
+                    } else if (inObject instanceof Model) {
+                        synchronized (user.getPrivateChats()) {
+                            user.getPrivateChats().notify();
+                            user = (Model) inObject;
+                        }
                         break;
                     }
+                } catch (IOException | ClassNotFoundException e) {
+                    e.printStackTrace();
+                    mySocket.closeEverything();
+                    break;
                 }
-                printer.printSuccessMessage("exit");
             }
+            printer.printSuccessMessage("exit");
         };
     }
 
@@ -286,17 +291,18 @@ public class ClientController {
         if (!DBConnect) {
             printer.printErrorMessage("db");
         }
+        newServer.enter(this);
     }
 
-    private ArrayList<String> addFriendsToServer(Server newServer) {
-        printer.println("Who do you want to add to your server?");
-        printer.println("enter 0 to select no one");
+    public ArrayList<String> addFriendsToServer(Server server) {
+        printer.println("Who do you want to add to the server?");
         printer.println("enter the indexes seperated by a space!");
         printer.printList(user.getFriends());
+        printer.println("enter 0 to select no one");
         ArrayList<String> addedFriends = new ArrayList<>();
         for (int friendIndex : getIntList(user.getFriends().size())) {
             String friendUsername = user.getFriends().get(friendIndex);
-            newServer.addNewMember(friendUsername);
+            server.addNewMember(friendUsername);
             addedFriends.add(friendUsername);
         }
         return addedFriends;
@@ -320,7 +326,7 @@ public class ClientController {
                 return output;
             } catch (IndexOutOfBoundsException e) {
                 printer.printErrorMessage("boundary");
-            } catch (Exception e) {
+            } catch (NumberFormatException e) {
                 printer.printErrorMessage("illegal character use");
             }
         }
@@ -338,6 +344,10 @@ public class ClientController {
             myServers.add(server);
             printer.println((i + 1) + ". " + server.getServerName());
         }
+        if (myServers.size() == 0) {
+            printer.println("You're not a member of any server...");
+            return;
+        }
         printer.println("enter 0 to go back");
         int index = myScanner.getInt(0, user.getServers().size());
         if (index != 0) {
@@ -346,37 +356,27 @@ public class ClientController {
     }
 
     private void chaneMyUserInfo() throws IOException, ClassNotFoundException {
-        while (true) {
-            printer.println(user.toString());
-            printer.printChangeUserMenu();
-            int command = myScanner.getInt(1, 6);
-            String newField = "";
-            SignUpOrChangeInfoAction changeInfoAction = new SignUpOrChangeInfoAction(user.getUsername());
-            switch (command) {
-                case 1 -> newField = receiveUsername(changeInfoAction);
-                case 2 -> newField = receivePassword(changeInfoAction);
-                case 3 -> newField = receiveEmail(changeInfoAction);
-                case 4 -> newField = receivePhoneNumber(changeInfoAction);
-                case 5 -> changeStatus();
-                case 6 -> {
-                    return;
-                }
+        printer.println(user.toString());
+        printer.printChangeUserMenu();
+        int command = myScanner.getInt(1, 5);
+        String newField = "";
+        SignUpOrChangeInfoAction changeInfoAction = new SignUpOrChangeInfoAction(user.getUsername());
+        switch (command) {
+            case 1 -> newField = receivePassword(changeInfoAction);
+            case 2 -> newField = receiveEmail(changeInfoAction);
+            case 3 -> newField = receivePhoneNumber(changeInfoAction);
+            case 4 -> changeStatus();
+            case 5 -> {
+                return;
             }
-            if (command == 5) {
-                printer.println("The status was changed successfully!");
-            } else if (newField != null) {
-                printer.println("The field was changed successfully!");
-                String username;
-                if (command == 1) {
-                    username = newField;
-                } else {
-                    username = user.getUsername();
-                }
-                user = mySocket.sendSignalAndGetResponse(new GetUserFromMainServerAction(username));
-                if (user == null) {
-                    printer.printErrorMessage("Lethal error: user data lost from the Main Server!");
-                }
-                break;
+        }
+        if (command == 4) {
+            printer.println("The status was changed successfully!");
+        } else if (newField != null) {
+            printer.println("The field was changed successfully!");
+            user = mySocket.sendSignalAndGetResponse(new GetUserFromMainServerAction(user.getUsername()));
+            if (user == null) {
+                printer.printErrorMessage("Lethal error: user data lost from the Main Server!");
             }
         }
     }
@@ -445,31 +445,42 @@ public class ClientController {
 
     private String receiveUsername(SignUpOrChangeInfoAction signUpOrChangeInfoAction) throws IOException, ClassNotFoundException {
         while (true) {
-            printer.printGoBackMessage();
-            if (user == null) printer.printGetMessage("username");
-            else printer.printGetMessage("new username");
-            printer.printConditionMessage("username");
-            String username = myScanner.getLine();
-            if ("".equals(username)) return null;
-            else {
-                signUpOrChangeInfoAction.setUsername(username);
-                if (mySocket.sendSignalAndGetResponse(signUpOrChangeInfoAction)) {
-                    return username;
-                } else printer.printErrorMessage("username");
+            try {
+                printer.printGoBackMessage();
+                if (user == null) printer.printGetMessage("username");
+                else printer.printGetMessage("new username");
+                printer.printConditionMessage("username");
+                String username = myScanner.getLine();
+                if ("".equals(username)) return null;
+                else {
+                    signUpOrChangeInfoAction.setUsername(username);
+                    Boolean success = mySocket.sendSignalAndGetResponse(signUpOrChangeInfoAction);
+                    if (success != null) {
+                        if (success) {
+                            return username;
+                        }
+                        throw new InvalidPropertiesFormatException("invalid format was used!");
+                    } else printer.printErrorMessage("taken");
+                }
+            } catch (InvalidPropertiesFormatException e) {
+                printer.printErrorMessage("format");
             }
         }
     }
 
     private String receivePassword(SignUpOrChangeInfoAction signUpOrChangeInfoAction) throws IOException, ClassNotFoundException {
         while (true) {
-            printer.printCancelMessage();
-            printer.printGetMessage("password");
-            printer.printConditionMessage("password");
-            String password = myScanner.getLine();
-            signUpOrChangeInfoAction.setPassword(password);
-            if (mySocket.sendSignalAndGetResponse(signUpOrChangeInfoAction)) {
-                return password;
-            } else {
+            try {
+                printer.printCancelMessage();
+                printer.printGetMessage("password");
+                printer.printConditionMessage("password");
+                String password = myScanner.getLine();
+                signUpOrChangeInfoAction.setPassword(password);
+                if (mySocket.sendSignalAndGetResponse(signUpOrChangeInfoAction)) {
+                    return password;
+                }
+                throw new InvalidPropertiesFormatException("invalid format was used!");
+            } catch (InvalidPropertiesFormatException e) {
                 printer.printErrorMessage("format");
             }
         }
@@ -477,27 +488,38 @@ public class ClientController {
 
     private String receiveEmail(SignUpOrChangeInfoAction signUpOrChangeInfoAction) throws IOException, ClassNotFoundException {
         while (true) {
-            printer.printCancelMessage();
-            printer.printGetMessage("email");
-            String email = myScanner.getLine();
-            if ("".equals(email)) return null;
-            signUpOrChangeInfoAction.setEmail(email);
-            if (mySocket.sendSignalAndGetResponse(signUpOrChangeInfoAction)) {
-                return email;
-            } else printer.printErrorMessage("email");
+            try {
+                printer.printCancelMessage();
+                printer.printGetMessage("email");
+                printer.printConditionMessage("email");
+                String email = myScanner.getLine();
+                if ("".equals(email)) return null;
+                signUpOrChangeInfoAction.setEmail(email);
+                if (mySocket.sendSignalAndGetResponse(signUpOrChangeInfoAction)) {
+                    return email;
+                }
+            } catch (InvalidPropertiesFormatException e) {
+                printer.printErrorMessage("format");
+            }
         }
     }
 
     private String receivePhoneNumber(SignUpOrChangeInfoAction signUpOrChangeInfoAction) throws IOException, ClassNotFoundException {
         while (true) {
-            printer.printCancelMessage();
-            printer.printGetMessage("phone number");
-            String phoneNumber = myScanner.getLine();
-            if ("".equals(phoneNumber)) return null;
-            signUpOrChangeInfoAction.setPhoneNumber(phoneNumber);
-            if (mySocket.sendSignalAndGetResponse(signUpOrChangeInfoAction)) {
-                return phoneNumber;
-            } else printer.printErrorMessage("illegal character use");
+            try {
+                printer.printCancelMessage();
+                printer.printGetMessage("phone number");
+                printer.printConditionMessage("phone number");
+                String phoneNumber = myScanner.getLine();
+                if ("".equals(phoneNumber)) return null;
+                signUpOrChangeInfoAction.setPhoneNumber(phoneNumber);
+                if (mySocket.sendSignalAndGetResponse(signUpOrChangeInfoAction)) {
+                    return phoneNumber;
+                }
+                throw new InvalidPropertiesFormatException("invalid format was used!");
+            } catch (InvalidPropertiesFormatException e) {
+                printer.printErrorMessage("format");
+            }
         }
     }
 

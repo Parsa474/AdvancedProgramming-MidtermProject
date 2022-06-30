@@ -26,11 +26,8 @@ public class View {
             case "boundary" -> System.err.println("Out of boundary index used!");
             case "length" -> System.err.println("Invalid input length");
             case "login" -> System.err.println("A username by this password does not exist!");
-            case "username" ->
-                    System.err.println("You either didn't follow the specified format or this username is already taken!");
-            case "format" -> System.err.println("Invalid format!");
-            case "email" ->
-                    System.err.println("This email is invalid (should have an '@' and a finish with a .example)");
+            case "taken" -> System.err.println("This username is already taken!");
+            case "format" -> System.err.println("You either didn't follow the specified format!");
             case "illegal character use" -> System.err.println("Do not use illegal characters!");
             case "main server" -> System.err.println("Could not connect to the main server");
             case "change fail" -> System.err.println("Could not change the field, conditions not met");
@@ -39,6 +36,7 @@ public class View {
             case "db" -> System.err.println("Could not connect to the database!");
             case "unknown" -> System.err.println("An unknown error occurred!");
             case "enter server" -> System.err.println("Could not enter the server!");
+            case "permission" -> System.err.println("You don't have the permission to carry out this action!");
             default -> System.err.println(error);
         }
     }
@@ -69,6 +67,11 @@ public class View {
                     System.out.println("Should only consist English letters/numbers and be of a minimum length of 6 characters");
             case "password" ->
                     System.out.println("Should consist of at least 1 capital letter, 1 small letter, 1 digit, and at least be of a length of 8");
+            case "email" -> {
+                System.out.println("Should have exactly one @ and not be empty before and after the @ and also have at least one dot (.) after the @");
+                System.out.println("and not start or finish with dots and not have consecutive dots");
+            }
+            case "phone number" -> System.out.println("Should be an 11 digit number");
         }
     }
 
@@ -81,6 +84,7 @@ public class View {
             case "reject" -> System.out.println("The specified user's request was rejected");
             case "exit" -> System.out.println("Exited successfully!");
             case "new role" -> System.out.println("The new role was created successfully!");
+            case "edit role" -> System.out.println("The role was edited successfully!");
             case "server name change" -> System.out.println("The server's name was changed successfully!");
         }
     }
@@ -93,6 +97,7 @@ public class View {
         System.out.println("5. Go to one of my servers");
         System.out.println("6. Change my user info");
         System.out.println("7. Log out");
+        System.out.println("8. Exit");
     }
 
     public void printList(ArrayList<String> list) {
@@ -107,8 +112,8 @@ public class View {
         }
     }
 
-    public void printServerMembersList(Set<String> members) {
-        for (String member : members) {
+    public void printHashMapList(Set<String> keys) {
+        for (String member : keys) {
             System.out.println(member);
         }
     }
@@ -120,7 +125,7 @@ public class View {
     }
 
     public void printServerMenu() {
-        System.out.println("1. Change server info (make new roles from here)");
+        System.out.println("1. Change server info (server name, add/edit text channels, add/edit roles)");
         System.out.println("2. Add/remove a member");
         System.out.println("3. Add/remove a text channel");
         System.out.println("4. Enter a text channel");
@@ -129,12 +134,11 @@ public class View {
     }
 
     public void printChangeUserMenu() {
-        System.out.println("1. Change my username");
-        System.out.println("2. Change my password");
-        System.out.println("3. Change my email");
-        System.out.println("4. Change my phone number");
-        System.out.println("5. Change my status");
-        System.out.println("6. Go back");
+        System.out.println("1. Change my password");
+        System.out.println("2. Change my email");
+        System.out.println("3. Change my phone number");
+        System.out.println("4. Change my status");
+        System.out.println("5. Go back");
     }
 
     public void printStatusChangeMenu() {
@@ -166,5 +170,10 @@ public class View {
         System.out.println("1. Creat a new role");
         System.out.println("2. Edit a role");
         System.out.println("3. Go back");
+    }
+
+    public void printMemberEditMenu() {
+        System.out.println("1. Add a new member");
+        System.out.println("2. Remove a member");
     }
 }

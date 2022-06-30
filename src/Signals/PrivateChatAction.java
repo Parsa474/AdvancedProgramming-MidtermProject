@@ -1,4 +1,4 @@
-package actions;
+package Signals;
 
 import mainServer.*;
 import discord.Model;
@@ -30,15 +30,13 @@ public class PrivateChatAction implements Action {
         if (!message.equals(sender + ": #exit")) {
 
             // updating database and server
-            senderUser.getPrivateChats().get(receiver).add(message); // should be checked !!!
+            senderUser.getPrivateChats().get(receiver).add(message);
             receiverUser.getPrivateChats().get(sender).add(message);
 
-//            boolean DBConnect = MainServer.updateDatabase(senderUser) && MainServer.updateDatabase(receiverUser);
-//            if (!DBConnect) {
-//
-//            }
-            MainServer.updateDatabase(senderUser);
-            MainServer.updateDatabase(receiverUser);
+            boolean DBConnect = MainServer.updateDatabase(senderUser) && MainServer.updateDatabase(receiverUser);
+            if (!DBConnect) {
+                return new DBConnectFailSignal();
+            }
 
             // sending message from socket if the receiver is online and in the private chat
             for (ClientHandler c : clientHandlers) {

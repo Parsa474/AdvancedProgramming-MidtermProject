@@ -15,8 +15,11 @@ public class Model implements Asset {
     private final LinkedList<String> friendRequests;
     private final LinkedList<String> friends;
     private final HashMap<String, Boolean> isInChat;
+    // maps all the friends' usernames to whether this user is in their private char (true) or not (false)
     private final HashMap<String, ArrayList<String>> privateChats;
+    // maps all the friend's usernames to all the exchanged messages between this user and them
     private final ArrayList<Integer> servers;
+    // holds only the unicode of the servers this user is a part of
 
     // Constructors:
     public Model(String username, String password, String email, String phoneNumber) {

@@ -1,4 +1,4 @@
-package actions;
+package Signals;
 
 import java.io.IOException;
 import java.io.Serializable;

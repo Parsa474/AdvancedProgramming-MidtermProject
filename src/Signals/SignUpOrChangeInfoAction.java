@@ -1,16 +1,14 @@
-package actions;
+package Signals;
 
 import mainServer.MainServer;
 import discord.Model;
 
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SignUpOrChangeInfoAction implements Action {
 
     // Fields:
     private String username;
-    private String newUsername;     //used for changing username
     private String password;
     private String email;
     private String phoneNumber;
@@ -18,7 +16,7 @@ public class SignUpOrChangeInfoAction implements Action {
     // when signing up always constructed 0
     // 1-4 for getting newUser fields when signing up, 5 for finalizing the signUp
     // -1 for changing one of the fields
-    private int subStage;   //only actually used for stage == 6 (subStage always equals stage)
+    private int subStage;   // only actually used for stage == 6 (subStage always equals stage)
     private String regex;
 
     // Constructors:
@@ -32,16 +30,9 @@ public class SignUpOrChangeInfoAction implements Action {
     }
 
     // Getters:
-    public String getNewUsername() {
-        return newUsername;
-    }
 
     public int getStage() {
         return stage;
-    }
-
-    public int getSubStage() {
-        return subStage;
     }
 
     // Other Methods:
@@ -53,11 +44,8 @@ public class SignUpOrChangeInfoAction implements Action {
         if (stage == 0) {
             this.username = username;
             stage = 1;
-        } else {
-            newUsername = username;
-            subStage = 1;
         }
-        regex = "^[A-Za-z0-9]{6,}$";
+        regex = "^\\w{6,}$";
     }
 
     public void setPassword(String password) {
@@ -77,7 +65,7 @@ public class SignUpOrChangeInfoAction implements Action {
         } else {
             subStage = 3;
         }
-        regex = "^[A-Za-z0-9]*$";
+        regex = "^\\w+$";
     }
 
     public void setPhoneNumber(String phoneNumber) {
@@ -87,7 +75,7 @@ public class SignUpOrChangeInfoAction implements Action {
         } else {
             subStage = 4;
         }
-        regex = "^[0-9]{11,}$";
+        regex = "^\\d{11}$";
     }
 
     @Override
@@ -95,7 +83,10 @@ public class SignUpOrChangeInfoAction implements Action {
         switch (stage) {
             // case 1-5: signing up processes
             case 1 -> {
-                return !MainServer.getUsers().containsKey(username) && isMatched(username);
+                if (MainServer.getUsers().containsKey(username)) {
+                    return null;
+                }
+                return isMatched(username);
             }
             case 2 -> {
                 return isMatched(password);
@@ -123,10 +114,6 @@ public class SignUpOrChangeInfoAction implements Action {
                 boolean DBConnect = true;
                 Model changedUser = MainServer.getUsers().get(username);
                 switch (subStage) {
-                    case 1 -> {
-                        success = !MainServer.getUsers().containsKey(newUsername) && isMatched(newUsername);
-                        if (success) changedUser.setUsername(newUsername);
-                    }
                     case 2 -> {
                         success = isMatched(password);
                         if (success) changedUser.setPassword(password);
@@ -145,13 +132,7 @@ public class SignUpOrChangeInfoAction implements Action {
                     }
                 }
                 if (success) {
-                    if (subStage == 1) {
-                        MainServer.getUsers().remove(username);
-                        MainServer.getUsers().put(newUsername, changedUser);
-                        MainServer.deleteUserFromDataBase(username);
-                    } else {
-                        MainServer.getUsers().replace(username, changedUser);
-                    }
+                    MainServer.getUsers().replace(username, changedUser);
                     DBConnect = MainServer.updateDatabase(changedUser);
                 }
                 return success && DBConnect;
@@ -161,18 +142,30 @@ public class SignUpOrChangeInfoAction implements Action {
     }
 
     private boolean isMatched(String input) {
-        Pattern pt = Pattern.compile(regex);
-        Matcher mt = pt.matcher(input);
-        return mt.matches();
+        return Pattern.matches(regex, input);
     }
 
     private boolean isAValidEmail(String email) {
-        try {
-            String[] inputs = email.split("@");
-            String[] afterAtSign = inputs[1].split("\\.");
-            return isMatched(inputs[0]) && isMatched(afterAtSign[0]) && isMatched(afterAtSign[1]);
-        } catch (Exception e) {
+        String[] emailDividedByAtSign = email.split("@");
+        if (emailDividedByAtSign.length != 2) {     // should have exactly one @
             return false;
         }
+        if (emailDividedByAtSign[1].split("\\.").length < 2) {    // should have at least 1 dot after @
+            return false;
+        }
+        boolean validStartAndFinish = validStartAndFinish(email);
+        boolean charactersAreValid = true;
+        for (String part : emailDividedByAtSign) {
+            validStartAndFinish = validStartAndFinish && validStartAndFinish(part);
+            for (String subPart : part.split("\\.")) {
+                charactersAreValid = charactersAreValid && isMatched(subPart);
+            }
+        }
+        return charactersAreValid && validStartAndFinish;
+    }
+
+    private boolean validStartAndFinish(String email) {
+        String checkStartAndFinish = email.replace(".", " ");
+        return checkStartAndFinish.length() == checkStartAndFinish.trim().length();
     }
 }
