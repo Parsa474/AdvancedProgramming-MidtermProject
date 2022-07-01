@@ -9,20 +9,20 @@ public class Server implements Asset {
     // Fields:
     private final int unicode;
     private String serverName;
-    private String owner;
     private HashMap<String, Role> serverRoles;      // maps the roles' names to their Role object
     private HashMap<String, HashSet<Role>> members;     // maps the members' username to their set of roles
     private ArrayList<TextChannel> textChannels;
+    private HashSet<String> bannedUsers;
 
     // Constructors:
     public Server(int unicode, String serverName, String creator) {
         // construct and initialize the fields
         this.unicode = unicode;
         this.serverName = serverName;
-        owner = creator;
         serverRoles = new HashMap<>();
         members = new HashMap<>();
         textChannels = new ArrayList<>();
+        bannedUsers = new HashSet<>();
 
         //a "member" role with just the SeeChatHistory Ability is added to the roles of the server
         Role memberRole = new Role("member", new HashSet<>(List.of(Ability.SeeChatHistory, Ability.PinMessage)));
@@ -34,11 +34,8 @@ public class Server implements Asset {
         HashSet<Role> ownerRoleSet = new HashSet<>(List.of(ownerRole, memberRole));
         members.put(creator, ownerRoleSet);
 
-        //initialize the members of the general char with just the creator
-        ArrayList<String> generalMembers = new ArrayList<>(Collections.singletonList(creator));
-
-        //initialize the first default text channel called general
-        textChannels.add(new TextChannel("general", generalMembers, new ArrayList<>()));
+        //initialize the first default text channel called general with just a creator member
+        textChannels.add(new TextChannel("general", new HashSet<>(List.of(creator))));
     }
 
     // Getters:
@@ -50,14 +47,6 @@ public class Server implements Asset {
         return serverName;
     }
 
-    public String getOwner() {
-        return owner;
-    }
-
-    public HashMap<String, Role> getServerRoles() {
-        return serverRoles;
-    }
-
     public HashMap<String, HashSet<Role>> getMembers() {
         return members;
     }
@@ -67,11 +56,6 @@ public class Server implements Asset {
     }
 
     // Other Methods:
-    public void addNewMember(String username) {
-        members.put(username, new HashSet<>(List.of(serverRoles.get("member"))));  // anyone gets the "member" role
-        textChannels.get(0).getMembers().put(username, false);     //anyone gets added to the general text channel
-    }
-
     public void enter(ClientController clientController) throws IOException, ClassNotFoundException {
         outer:
         while (true) {
@@ -80,46 +64,43 @@ public class Server implements Asset {
             int command = clientController.getMyScanner().getInt(1, 6);
 
             //update server from MainServer
-            Server updatedThis = clientController.getMySocket().sendSignalAndGetResponse(new GetServerFromMainServerAction(unicode));
-            if (updatedThis == null) {
-                clientController.getPrinter().printErrorMessage("db");
-                return;
-            }
-            updateThisFromMainServer(updatedThis);
+            selfUpdate(clientController);
 
             // get all the member's abilities
-            HashSet<Ability> abilities = new HashSet<>();
-            for (Role role : members.get(clientController.getUser().getUsername())) {
-                abilities.addAll(role.getAbilities());
-            }
+            String myUsername = clientController.getUser().getUsername();
 
             switch (command) {
-                case 1 -> changeInfo(clientController, abilities);
-                case 2 -> addOrRemoveMembers(clientController, abilities);  //to do: send signals for the added friends
-                case 3 -> addOrRemoveTextChannels(clientController, abilities);
-                case 4 -> enterATextChannel(clientController, abilities);
+                case 1 -> changeInfo(clientController, myUsername);
+                case 2 -> changeMembers(clientController, myUsername);
+                case 3 -> changeTextChannels(clientController, myUsername);
+                case 4 -> enterATextChannel(clientController, myUsername);
                 case 5 -> seeAllMembersRoles();
                 case 6 -> {
                     break outer;
                 }
             }
-            //updateThisOnMainServer(clientController);
         }
     }
 
-    public void updateThisOnMainServer(ClientController clientController) throws IOException, ClassNotFoundException {
-        boolean DBConnect = clientController.getMySocket().sendSignalAndGetResponse(new UpdateServerOnMainServerAction(this));
-        if (!DBConnect) {
+    private void selfUpdate(ClientController clientController) throws IOException, ClassNotFoundException {
+        Server updatedThis = clientController.getMySocket().sendSignalAndGetResponse(new GetServerFromMainServerAction(unicode));
+        if (updatedThis == null) {
             clientController.getPrinter().printErrorMessage("db");
+            return;
         }
+        updateThisFromMainServer(updatedThis);
+    }
+
+    public boolean updateThisOnMainServer(ClientController clientController) throws IOException, ClassNotFoundException {
+        return clientController.getMySocket().sendSignalAndGetResponse(new UpdateServerOnMainServerAction(this));
     }
 
     private void updateThisFromMainServer(Server updatedThis) {
         serverName = updatedThis.serverName;
-        owner = updatedThis.owner;
         serverRoles = updatedThis.serverRoles;
         members = updatedThis.members;
         textChannels = updatedThis.textChannels;
+        bannedUsers = updatedThis.bannedUsers;
     }
 
     private void seeAllMembersRoles() {
@@ -132,14 +113,14 @@ public class Server implements Asset {
         }
     }
 
-    private void changeInfo(ClientController clientController, HashSet<Ability> abilities) throws IOException, ClassNotFoundException {
+    private void changeInfo(ClientController clientController, String myUsername) throws IOException, ClassNotFoundException {
         outer:
         while (true) {
             clientController.getPrinter().printServerChangeInfoMenu();
             int command = clientController.getMyScanner().getInt(1, 4);
             switch (command) {
                 case 1 -> {
-                    if (abilities.contains(Ability.ChangeServerName)) {
+                    if (getAllAbilities(myUsername).contains(Ability.ChangeServerName)) {
                         clientController.getPrinter().printGetMessage("new server name");
                         clientController.getPrinter().printGoBackMessage();
                         serverName = clientController.getMyScanner().getLine();
@@ -152,32 +133,19 @@ public class Server implements Asset {
                     }
                 }
                 case 2 -> {
-                    if (abilities.contains(Ability.Owner)) {
-                        clientController.getPrinter().printTextChannelList(textChannels);
-                        clientController.getPrinter().println("enter 0 to go back");
-                        int index = clientController.getMyScanner().getInt(0, textChannels.size());
-                        if (index == 0) {
-                            break;
-                        }
-                        clientController.getPrinter().printGetMessage("new text channel name");
-                        String newTextChannelName = clientController.getMyScanner().getLine();
-                        textChannels.get(index - 1).setName(newTextChannelName);
-                    } else {
-                        clientController.getPrinter().printErrorMessage("only the owner can make this change!");
-                    }
-                }
-                case 3 -> {
-                    if (abilities.contains(Ability.Owner)) {
+                    if (getAllAbilities(myUsername).contains(Ability.Owner)) {
                         createOrEditARole(clientController);
                     } else {
                         clientController.getPrinter().printErrorMessage("Only the owner can access this part!");
                     }
                 }
-                case 4 -> {
+                case 3 -> {
                     break outer;
                 }
             }
-            updateThisOnMainServer(clientController);
+            if (!updateThisOnMainServer(clientController)) {
+                clientController.getPrinter().printErrorMessage("db");
+            }
         }
     }
 
@@ -188,7 +156,7 @@ public class Server implements Asset {
                 Role newRole = createNewRole(clientController);
                 clientController.getPrinter().println("Enter the usernames of the members you want to give this role to");
                 clientController.getPrinter().println("the usernames must be seperated by a space (invalid usernames will be ignored)");
-                clientController.getPrinter().printHashMapList(members.keySet());
+                clientController.getPrinter().printSetList(members.keySet());
                 clientController.getPrinter().printGoBackMessage();
                 String list = clientController.getMyScanner().getLine();
                 if ("".equals(list)) {
@@ -231,7 +199,7 @@ public class Server implements Asset {
 
     private void editARole(ClientController clientController) {
         clientController.getPrinter().printGetMessage("enter the name of the role you want to edit");
-        clientController.getPrinter().printHashMapList(serverRoles.keySet());
+        clientController.getPrinter().printSetList(serverRoles.keySet());
         clientController.getPrinter().printGoBackMessage();
         String roleName;
         while (true) {
@@ -257,9 +225,9 @@ public class Server implements Asset {
         clientController.getPrinter().printSuccessMessage("edit role");
     }
 
-    private void addOrRemoveMembers(ClientController clientController, HashSet<Ability> abilities) throws IOException, ClassNotFoundException {
-        clientController.getPrinter().printMemberEditMenu();
-        int command = clientController.getMyScanner().getInt(1, 3);
+    private void changeMembers(ClientController clientController, String myUsername) throws IOException, ClassNotFoundException {
+        clientController.getPrinter().printMembersEditMenu();
+        int command = clientController.getMyScanner().getInt(1, 4);
         switch (command) {
             case 1 -> {
                 if (addFriendsToServer(clientController)) {
@@ -267,14 +235,28 @@ public class Server implements Asset {
                 }
             }
             case 2 -> {
-                if (abilities.contains(Ability.RemoveMember)) {
-                    removeMembersFromServer();
+                if (getAllAbilities(myUsername).contains(Ability.RemoveMember)) {
+                    Boolean keepGoing;
+                    do {
+                        keepGoing = removeOrBanMembersFromServer(clientController, false);
+                        if (keepGoing == null) break;
+                    } while (keepGoing);
+                } else {
+                    clientController.getPrinter().printErrorMessage("permission");
+                }
+            }
+            case 3 -> {
+                if (getAllAbilities(myUsername).contains(Ability.Ban)) {
+                    Boolean keepGoing;
+                    do {
+                        keepGoing = removeOrBanMembersFromServer(clientController, true);
+                        if (keepGoing == null) break;
+                    } while (keepGoing);
                 } else {
                     clientController.getPrinter().printErrorMessage("permission");
                 }
             }
         }
-        updateThisOnMainServer(clientController);
     }
 
     public boolean addFriendsToServer(ClientController clientController) throws IOException, ClassNotFoundException {
@@ -286,18 +268,39 @@ public class Server implements Asset {
 
         printer.println("Who do you want to add to the server?");
         printer.println("enter the indexes seperated by a space!");
-        printer.printList(user.getFriends());
+
+        // print the list of the friends that are not a member of the server
+        LinkedList<String> notAddedFriends = user.getFriends();
+        selfUpdate(clientController);
+        for (String member : members.keySet()) {
+            notAddedFriends.remove(member);
+        }
+        printer.printList(notAddedFriends);
         printer.println("enter 0 to select no one");
 
+        // get the indexes of the not added friends you want to add and add them to the server
         ArrayList<String> addedFriends = new ArrayList<>();
-        for (int friendIndex : myScanner.getIntList(user.getFriends().size())) {
-            String friendUsername = user.getFriends().get(friendIndex);
-            addNewMember(friendUsername);
+        for (int friendIndex : myScanner.getIntList(notAddedFriends.size())) {
+            String friendUsername = notAddedFriends.get(friendIndex);
+            if (addNewMember(friendUsername)) {
+                clientController.getPrinter().printSuccessMessage("add friend");
+                clientController.getPrinter().println(friendUsername);
+            } else {
+                clientController.getPrinter().printErrorMessage("ban");
+                clientController.getPrinter().println(friendUsername);
+            }
             addedFriends.add(friendUsername);
         }
 
+        // update this server on the MainServer
+        boolean DBConnect = mySocket.sendSignalAndGetResponse(new UpdateServerOnMainServerAction(this));
+        if (!DBConnect) {
+            printer.printErrorMessage("db");
+            return false;
+        }
+        // send the signal to the added friends that they're added and update this on MainServer
         for (String addedFriend : addedFriends) {
-            boolean DBConnect = mySocket.sendSignalAndGetResponse(new AddFriendToServerAction(unicode, addedFriend));
+            DBConnect = mySocket.sendSignalAndGetResponse(new AddFriendToServerAction(unicode, addedFriend));
             if (!DBConnect) {
                 printer.printErrorMessage("db");
                 return false;
@@ -306,33 +309,164 @@ public class Server implements Asset {
         return true;
     }
 
-    private void removeMembersFromServer() {
-
+    public boolean addNewMember(String username) {
+        if (!bannedUsers.contains(username)) {
+            members.put(username, new HashSet<>(List.of(serverRoles.get("member"))));  // anyone gets the "member" role
+            //anyone gets added all the text channels
+            for (TextChannel textChannel : textChannels) {
+                textChannel.getMembers().put(username, false);
+            }
+            return true;
+        }
+        return false;
     }
 
-    private void addOrRemoveTextChannels(ClientController clientController, HashSet<Ability> abilities) {
+    private Boolean removeOrBanMembersFromServer(ClientController clientController, boolean ban) throws IOException, ClassNotFoundException {
 
+        View printer = clientController.getPrinter();
+        MyScanner myScanner = clientController.getMyScanner();
+        MySocket mySocket = clientController.getMySocket();
+
+        printer.println("Who do you want to remove/ban from the server?");
+        printer.println("Enter their name (invalid username will be ignored!)");
+        printer.printGoBackMessage();
+
+        // print the list of the members of the server and get the member's username whom will be removed
+        selfUpdate(clientController);
+        printer.printSetList(members.keySet());
+        String beingRemovedOrBannedMember = myScanner.getLine();
+        if ("".equals(beingRemovedOrBannedMember)) {
+            return false;
+        }
+        members.remove(beingRemovedOrBannedMember);
+
+        // also remove them from all the text channels
+        for (TextChannel textChannel : textChannels) {
+            textChannel.removeMember(beingRemovedOrBannedMember);
+        }
+
+        // also add to the banned list of this is a ban action
+        if (ban) {
+            bannedUsers.add(beingRemovedOrBannedMember);
+        }
+
+        // update this server on the MainServer
+        boolean DBConnect = mySocket.sendSignalAndGetResponse(new UpdateServerOnMainServerAction(this));
+        if (!DBConnect) {
+            printer.printErrorMessage("db");
+            return null;
+        }
+
+        // send the signal to the removed member that they're removed and update this on MainServer
+        DBConnect = mySocket.sendSignalAndGetResponse(new removeFriendFromServerAction(unicode, beingRemovedOrBannedMember));
+        return keepGoing(printer, myScanner, DBConnect);
     }
 
-    private void enterATextChannel(ClientController clientController, HashSet<Ability> abilities) throws IOException, ClassNotFoundException {
+    private Boolean keepGoing(View printer, MyScanner myScanner, boolean DBConnect) {
+        if (!DBConnect) {
+            printer.printErrorMessage("db");
+            return null;
+        }
+        boolean keepGoing = false;
+        printer.printKeepGoingMenu();
+        if (myScanner.getInt(1, 2) == 1) {
+            keepGoing = true;
+        }
+        return keepGoing;
+    }
+
+    private void changeTextChannels(ClientController clientController, String myUsername) throws IOException, ClassNotFoundException {
+        clientController.getPrinter().printTextChannelsEditMenu();
+        int command = clientController.getMyScanner().getInt(1, 5);
+        selfUpdate(clientController);
+        switch (command) {
+            case 1 -> {
+                if (getAllAbilities(myUsername).contains(Ability.CreateChannel)) {
+                    if (createNewTextChannel(clientController)) {
+                        clientController.getPrinter().printSuccessMessage("channel add");
+                    } else {
+                        clientController.getPrinter().printErrorMessage("db");
+                    }
+                } else {
+                    clientController.getPrinter().printErrorMessage("permission");
+                }
+            }
+            case 2 -> {
+                if (getAllAbilities(myUsername).contains(Ability.RemoveChannel)) {
+                    if (removeTextChannel(clientController)) {
+                        clientController.getPrinter().printSuccessMessage("channel remove");
+                    } else {
+                        clientController.getPrinter().printErrorMessage("db");
+                    }
+                } else {
+                    clientController.getPrinter().printErrorMessage("permission");
+                }
+            }
+            case 3 -> {
+                if (getAllAbilities(myUsername).contains(Ability.CreateChannel) || getAllAbilities(myUsername).contains(Ability.RemoveChannel)) {
+                    clientController.getPrinter().printTextChannelList(textChannels);
+                    clientController.getPrinter().println("enter 0 to go back");
+                    int index = clientController.getMyScanner().getInt(0, textChannels.size());
+                    if (index == 0) {
+                        break;
+                    }
+                    clientController.getPrinter().printGetMessage("new text channel name");
+                    String newTextChannelName = clientController.getMyScanner().getLine();
+                    textChannels.get(index - 1).setName(newTextChannelName);
+                } else {
+                    clientController.getPrinter().printErrorMessage("permission");
+                }
+            }
+            case 4 -> {
+                if (getAllAbilities(myUsername).contains(Ability.LimitMembersOfChannels)) {
+                    Boolean keepGoing;
+                    do {
+                        keepGoing = limitMemberFromATextChannel(clientController);
+                        if (keepGoing == null) break;
+                    } while (keepGoing);
+                } else {
+                    clientController.getPrinter().printErrorMessage("permission");
+                }
+            }
+        }
+    }
+
+    private boolean createNewTextChannel(ClientController clientController) throws IOException, ClassNotFoundException {
+        clientController.getPrinter().println("Enter the name of the new channel");
+        String newTextChannelName = clientController.getMyScanner().getLine();
+        textChannels.add(new TextChannel(newTextChannelName, members.keySet()));
+        return updateThisOnMainServer(clientController);
+    }
+
+    private boolean removeTextChannel(ClientController clientController) throws IOException, ClassNotFoundException {
+        clientController.getPrinter().println("Enter the index of the channel you want to remove");
+        int index = clientController.getMyScanner().getInt(1, textChannels.size());
+        textChannels.remove(index);
+        return updateThisOnMainServer(clientController);
+    }
+
+    private void enterATextChannel(ClientController clientController, String myUsername) throws IOException, ClassNotFoundException {
 
         Model user = clientController.getUser();
         View printer = clientController.getPrinter();
         MyScanner myScanner = clientController.getMyScanner();
         MySocket mySocket = clientController.getMySocket();
 
+        selfUpdate(clientController);
         printer.printTextChannelList(textChannels);
         int index = clientController.getMyScanner().getInt(1, textChannels.size()) - 1;
         TextChannel selectedTextChannel = textChannels.get(index);
 
-        selectedTextChannel.getMembers().replace(user.getUsername(), true);
-        updateThisOnMainServer(clientController);
+        selectedTextChannel.getMembers().replace(myUsername, true);
+        if (!updateThisOnMainServer(clientController)) {
+            printer.printErrorMessage("db");
+        }
 
         ArrayList<String> receivers = new ArrayList<>(selectedTextChannel.getMembers().keySet());
-        receivers.remove(user.getUsername());   // remove oneself from the receivers
+        receivers.remove(myUsername);   // remove oneself from the receivers
 
         // printing previous messages for the people who have the access to see chat history
-        if (abilities.contains(Ability.SeeChatHistory)) {
+        if (getAllAbilities(myUsername).contains(Ability.SeeChatHistory)) {
             printer.printList(selectedTextChannel.getMessages());
         }
 
@@ -345,7 +479,7 @@ public class Server implements Asset {
         while (true) {
             String message = myScanner.getLine();
             try {
-                mySocket.write(new TextChannelChatAction(user.getUsername(), message, unicode, index, receivers));
+                mySocket.write(new TextChannelChatAction(myUsername, message, unicode, index, receivers));
                 if (message.equals("#exit")) {
                     break;
                 }
@@ -361,11 +495,42 @@ public class Server implements Asset {
                 e.printStackTrace();
             }
             selectedTextChannel = mySocket.sendSignalAndGetResponse(new UpdateTextChannelOfServerFromMainServer(unicode, index));
-            selectedTextChannel.getMembers().replace(user.getUsername(), false);
+            selectedTextChannel.getMembers().replace(myUsername, false);
         }
         boolean DBConnect = mySocket.sendSignalAndGetResponse(new UpdateTextChannelOfServerOnMainServer(unicode, index, selectedTextChannel));
         if (!DBConnect) {
             printer.printErrorMessage("db");
         }
+    }
+
+    private Boolean limitMemberFromATextChannel(ClientController clientController) throws IOException, ClassNotFoundException {
+
+        View printer = clientController.getPrinter();
+        MyScanner myScanner = clientController.getMyScanner();
+
+        printer.println("Which text channel do you want to limit a member from?");
+        printer.printTextChannelList(textChannels);
+        int index = myScanner.getInt(1, textChannels.size()) - 1;
+        printer.println("Enter the name of the member you want to limit from this text channel (invalid name will be ignored)");
+        selfUpdate(clientController);
+        printer.printSetList(textChannels.get(index).getMembers().keySet());
+        printer.printGoBackMessage();
+        String beingLimited = myScanner.getLine();
+        if ("".equals(beingLimited)) {
+            return false;
+        }
+        textChannels.get(index).getMembers().remove(beingLimited);
+
+        // update this server on the MainServer
+        boolean DBConnect = clientController.getMySocket().sendSignalAndGetResponse(new UpdateServerOnMainServerAction(this));
+        return keepGoing(printer, myScanner, DBConnect);
+    }
+
+    private HashSet<Ability> getAllAbilities(String username) {
+        HashSet<Ability> abilities = new HashSet<>();
+        for (Role role : members.get(username)) {
+            abilities.addAll(role.getAbilities());
+        }
+        return abilities;
     }
 }

@@ -3,6 +3,7 @@ package discord;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 
 public class TextChannel implements Serializable {
     // Fields:
@@ -14,14 +15,14 @@ public class TextChannel implements Serializable {
     // holds all the messages exchanged in this text channel
 
     // Constructors:
-    public TextChannel(String name, ArrayList<String> members, ArrayList<String> messages) {
+    public TextChannel(String name, Set<String> members) {
         this.name = name;
         pinnedMessage = null;
         this.members = new HashMap<>();
         for (String member : members) {
             this.members.put(member, false);
         }
-        this.messages = messages;
+        messages = new ArrayList<>();
     }
 
     // Getters:
@@ -48,5 +49,9 @@ public class TextChannel implements Serializable {
 
     public void setPinnedMessage(String pinnedMessage) {
         this.pinnedMessage = pinnedMessage;
+    }
+
+    public void removeMember(String username) {
+        members.remove(username);
     }
 }

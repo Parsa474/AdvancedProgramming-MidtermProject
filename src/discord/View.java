@@ -36,6 +36,7 @@ public class View {
             case "unknown" -> System.err.println("An unknown error occurred!");
             case "enter server" -> System.err.println("Could not enter the server!");
             case "permission" -> System.err.println("You don't have the permission to carry out this action!");
+            case "ban" -> System.err.println("This user is banned from this server and could not be added:");
             default -> System.err.println(error);
         }
     }
@@ -86,6 +87,10 @@ public class View {
             case "edit role" -> System.out.println("The role was edited successfully!");
             case "server name change" -> System.out.println("The server's name was changed successfully!");
             case "friend add" -> System.out.println("The selected friends were added to the server successfully!");
+            case "channel add" -> System.out.println("The channel was created successfully!");
+            case "channel remove" -> System.out.println("The channel was removed successfully!");
+            case "add friend" -> System.out.println("Added successfully:");
+            default -> System.out.println("wrong input on printSuccessMessage");
         }
     }
 
@@ -112,7 +117,7 @@ public class View {
         }
     }
 
-    public void printHashMapList(Set<String> keys) {
+    public void printSetList(Set<String> keys) {
         for (String member : keys) {
             System.out.println(member);
         }
@@ -125,9 +130,9 @@ public class View {
     }
 
     public void printServerMenu() {
-        System.out.println("1. Change server info (server name, add/edit text channels, add/edit roles)");
-        System.out.println("2. Add/remove a member");
-        System.out.println("3. Add/remove a text channel");
+        System.out.println("1. Change server info (server name, add/edit roles)");
+        System.out.println("2. Add/remove/ban a member");
+        System.out.println("3. Add/remove/edit/limit members from a text channel");
         System.out.println("4. Enter a text channel");
         System.out.println("5. See all the roles of everyone");
         System.out.println("6. Go back");
@@ -150,9 +155,8 @@ public class View {
 
     public void printServerChangeInfoMenu() {
         System.out.println("1. Change server's name");
-        System.out.println("2. Change a text channel's name");
-        System.out.println("3. Create/edit a Role");
-        System.out.println("4. Go back");
+        System.out.println("2. Create/edit a Role");
+        System.out.println("3. Go back");
     }
 
     public void printAbilityList() {
@@ -172,8 +176,24 @@ public class View {
         System.out.println("3. Go back");
     }
 
-    public void printMemberEditMenu() {
+    public void printMembersEditMenu() {
         System.out.println("1. Add a new member");
         System.out.println("2. Remove a member");
+        System.out.println("3. Ban a user");
+        System.out.println("4. Go back");
+    }
+
+    public void printKeepGoingMenu() {
+        System.out.println("Do you want to keep going?");
+        System.out.println("1. Yes");
+        System.out.println("2. No");
+    }
+
+    public void printTextChannelsEditMenu() {
+        System.out.println("1. Add a new text channel");
+        System.out.println("2. Remove a text channel");
+        System.out.println("3. Rename a text channel");
+        System.out.println("4. Limit a member from a text channel");
+        System.out.println("5. Go back");
     }
 }

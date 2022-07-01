@@ -289,13 +289,6 @@ public class ClientController {
         // add some friends to the newly made server if you want
         DBConnect = newServer.addFriendsToServer(this);
         if (!DBConnect) {
-            printer.printErrorMessage("db");
-            return;
-        }
-        // update the server that has new members added from the friends on the MainServer
-        DBConnect = mySocket.sendSignalAndGetResponse(new UpdateServerOnMainServerAction(newServer));
-        if (!DBConnect) {
-            printer.printErrorMessage("db");
             return;
         }
 

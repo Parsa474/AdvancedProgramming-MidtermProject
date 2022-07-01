@@ -43,9 +43,9 @@ public class MyScanner {
                 }
                 return output;
             } catch (IndexOutOfBoundsException e) {
-                System.err.println("boundary");
+                System.err.println("Do not use out of boundary numbers!");
             } catch (NumberFormatException e) {
-                System.err.println("illegal character use");
+                System.err.println("Type in numbers!");
             }
         }
     }

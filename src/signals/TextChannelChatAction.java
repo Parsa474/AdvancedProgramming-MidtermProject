@@ -49,7 +49,7 @@ public class TextChannelChatAction implements Action {
             // updating database and server
             synchronized (MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex)) {
                 if (!message.startsWith("NOTIFICATION: ")) {
-                    message = (MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getMessages().size() + 1) + "_ " + message;
+                    message = (MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getMessages().size() + 1) + "- " + message;
                     MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getMessages().add(message);
                 }
                 boolean DBConnect = MainServer.updateDatabase(MainServer.getServers().get(serverUnicode));
