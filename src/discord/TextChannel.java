@@ -11,18 +11,21 @@ public class TextChannel implements Serializable {
     private String pinnedMessage;
     private final HashMap<String, Boolean> members;
     // maps all the members' username to whether they're in this text channel right now (true) or not (false)
-    private final ArrayList<String> messages;
+    private final ArrayList<TextChannelMessage> textChannelMessages;
     // holds all the messages exchanged in this text channel
 
     // Constructors:
     public TextChannel(String name, Set<String> members) {
         this.name = name;
-        pinnedMessage = null;
+        pinnedMessage = "";
         this.members = new HashMap<>();
         for (String member : members) {
             this.members.put(member, false);
         }
-        messages = new ArrayList<>();
+        textChannelMessages = new ArrayList<TextChannelMessage>();
+        for (String s : messages) {
+            textChannelMessages.add(new TextChannelMessage(s));
+        }
     }
 
     // Getters:
@@ -38,7 +41,15 @@ public class TextChannel implements Serializable {
         return members;
     }
 
+    public ArrayList<TextChannelMessage> getTextChannelMessages() {
+        return textChannelMessages;
+    }
+
     public ArrayList<String> getMessages() {
+        ArrayList<String> messages = new ArrayList<String>();
+        for (TextChannelMessage m : textChannelMessages) {
+            messages.add(m.getMessage());
+        }
         return messages;
     }
 

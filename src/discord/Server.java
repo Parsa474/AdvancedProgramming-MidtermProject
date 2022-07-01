@@ -488,7 +488,7 @@ public class Server implements Asset {
             }
         }
 
-        synchronized (user.getUsername()) {
+        synchronized (user.getUsername()) {  // should it be user or user.getUsername() ??????????????????????????
             try {
                 user.getUsername().wait();
             } catch (InterruptedException e) {

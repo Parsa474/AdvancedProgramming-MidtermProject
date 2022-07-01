@@ -25,18 +25,16 @@ public class TextChannelListener implements Runnable {
                 inObject = mySocket.read();
                 if (inObject instanceof DBConnectFailSignal) {
                     printer.printErrorMessage("db");
-                    synchronized (user.getUsername()) {
+                    synchronized (user.getUsername()) {  // should it be user or user.getUsername() ??????????????????????????
                         user.getUsername().notify();
                     }
                     break;
                 } else if (inObject instanceof String) {    // The String signals are the messages from the friend
                     printer.println((String) inObject);
-                } else if (inObject instanceof Boolean) {
-                    if ((Boolean) inObject) {    // true if seen by the friend immediately
-                        printer.println("(seen)");
-                    }
+                } else if (inObject instanceof TextChannelMessage) {
+                    printer.println(((TextChannelMessage) inObject).getMessage());
                 } else if (inObject instanceof Model) {
-                    synchronized (user.getUsername()) {
+                    synchronized (user.getUsername()) {  // should it be user or user.getUsername() ??????????????????????????
                         user.getUsername().notify();
                         //user = (Model) inObject;
                     }

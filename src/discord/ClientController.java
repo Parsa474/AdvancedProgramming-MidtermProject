@@ -510,6 +510,7 @@ public class ClientController {
                 }
             }
         } catch (IOException e) {
+            e.printStackTrace();
             new View().printErrorMessage("main server");
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);

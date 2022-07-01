@@ -1,5 +1,6 @@
 package signals;
 
+import discord.TextChannelMessage;
 import discord.Model;
 import discord.TextChannel;
 import mainServer.ClientHandler;
@@ -30,27 +31,57 @@ public class TextChannelChatAction implements Action {
     public Object act() throws IOException {
         Model senderUser = MainServer.getUsers().get(sender);
         if (!message.equals("#exit")) {
-            if (message.startsWith("/pin ")) {
-                message = message.substring(5);
-                int indexOfMessage = pinMessage(MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex), message);
-                if (indexOfMessage == -1) {
-                    return "WARNING: Invalid format for pinning a message";
-                } else if (indexOfMessage == -2) {
-                    return "WARNING: invalid number of message to pin. out of boundary";
-                } else {
-                    message = "NOTIFICATION: " + sender + " pinned \"" + MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getMessages().get(indexOfMessage) + "\"";
+            if (message.startsWith("/") || message.startsWith("#")) {
+                if (message.equals("#pin")) {
+                    return "PINNED MESSAGE: " + MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getPinnedMessage();
                 }
-            } else if (message.equals("#pin")) {  // shows the pinned message of the textChannel
-                message = "PINNED MESSAGE: " + MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getPinnedMessage();
-                return message;
-            } else {
-                message = sender + ": " + message;
+                String[] command = message.split(" ");
+                int indexOfMessage = checkIndex(MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex), command[1]);
+                if (indexOfMessage == -1) {
+                    return "WARNING: Invalid format";
+                } else if (indexOfMessage == -2) {
+                    return "WARNING: invalid number of message. out of boundary";
+                } else {
+                    switch (command[0]) {
+                        case "/pin" -> {
+                            pinMessage(MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex), indexOfMessage);
+                            message = "NOTIFICATION: " + sender + " pinned \"" + MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getMessages().get(indexOfMessage) + "\"";
+                        }
+                        case "/like" -> {
+                            likeMessage(MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex), indexOfMessage);
+                            message = "NOTIFICATION: " + sender + " liked \"" + MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getMessages().get(indexOfMessage) + "\"";
+                        }
+                        case "/dislike" -> {
+                            dislikeMessage(MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex), indexOfMessage);
+                            message = "NOTIFICATION: " + sender + " disliked \"" + MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getMessages().get(indexOfMessage) + "\"";
+                        }
+                        case "/laugh" -> {
+                            laughMessage(MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex), indexOfMessage);
+                            message = "NOTIFICATION: " + sender + " laughed \"" + MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getMessages().get(indexOfMessage) + "\"";
+                        }
+
+
+                        case "#likes" -> {
+                            return MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getTextChannelMessages().get(indexOfMessage).showLikes();
+                        }
+                        case "#dislikes" -> {
+                            return MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getTextChannelMessages().get(indexOfMessage).showDislikes();
+                        }
+                        case "#laughs" -> {
+                            return MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getTextChannelMessages().get(indexOfMessage).showLaugh();
+                        }
+                        case "#reactions" -> {
+                            return MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getTextChannelMessages().get(indexOfMessage).showAllReactions();
+                        }
+                    }
+                }
             }
+            TextChannelMessage textChannelMessage = new TextChannelMessage(message);
             // updating database and server
             synchronized (MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex)) {
                 if (!message.startsWith("NOTIFICATION: ")) {
-                    message = (MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getMessages().size() + 1) + "- " + message;
-                    MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getMessages().add(message);
+                    textChannelMessage.setMessage((MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getMessages().size() + 1) + "- " + sender + ": " + textChannelMessage.getMessage());
+                    MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getTextChannelMessages().add(textChannelMessage);
                 }
                 boolean DBConnect = MainServer.updateDatabase(MainServer.getServers().get(serverUnicode));
                 if (!DBConnect) return null;        // for debug
@@ -69,7 +100,7 @@ public class TextChannelChatAction implements Action {
                         if (updatedTextChannelFromMainServer.getMembers().get(userOfClientHandler.getUsername())) {
                             // synchronize!!!!!!!
                             synchronized (c.getMySocket()) {
-                                c.getMySocket().write(message); // we can also write "this" object
+                                c.getMySocket().write(textChannelMessage); // we can also write "this" object
                             }
                         }
                     }
@@ -81,15 +112,10 @@ public class TextChannelChatAction implements Action {
         }
     }
 
-    public String showPinnedMessage(TextChannel textChannel) {
-        return textChannel.getPinnedMessage();
-    }
-
-    private int pinMessage(TextChannel textChannel, String message) {
+    private int checkIndex(TextChannel textChannel, String message) {
         try {
             int index = Integer.parseInt(message) - 1;
             if (index >= 0 && index < textChannel.getMessages().size()) {
-                textChannel.setPinnedMessage(textChannel.getMessages().get(index));
                 return index;
             } else {
                 return -2;  // out of boundary
@@ -97,5 +123,25 @@ public class TextChannelChatAction implements Action {
         } catch (NumberFormatException e) {
             return -1;  // wrong format
         }
+    }
+
+    public String showPinnedMessage(TextChannel textChannel) {
+        return textChannel.getPinnedMessage();
+    }
+
+    private void pinMessage(TextChannel textChannel, int index) {
+        textChannel.setPinnedMessage(textChannel.getMessages().get(index));
+    }
+
+    private void likeMessage(TextChannel textChannel, int index) {
+        textChannel.getTextChannelMessages().get(index).like(sender);
+    }
+
+    private void dislikeMessage(TextChannel textChannel, int index) {
+        textChannel.getTextChannelMessages().get(index).dislike(sender);
+    }
+
+    private void laughMessage(TextChannel textChannel, int index) {
+        textChannel.getTextChannelMessages().get(index).laugh(sender);
     }
 }
