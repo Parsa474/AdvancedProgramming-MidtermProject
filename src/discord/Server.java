@@ -209,7 +209,7 @@ public class Server implements Asset {
         clientController.getPrinter().println("What abilities does this role have?");
         clientController.getPrinter().printAbilityList();
         clientController.getPrinter().println("(enter the numbers seperated by a space)");
-        ArrayList<Integer> abilityIndexes = clientController.getIntList(8); // indexes received range: 0-7
+        ArrayList<Integer> abilityIndexes = clientController.getMyScanner().getIntList(8); // indexes received range: 0-7
         Role newRole = new Role(newRoleName, new HashSet<>());
         for (int abilityIndex : abilityIndexes) {
             newRole.getAbilities().add(Ability.values()[abilityIndex + 1]); // ability 0 is only for the owner
@@ -248,7 +248,7 @@ public class Server implements Asset {
         clientController.getPrinter().println("What abilities will this role have after the change?");
         clientController.getPrinter().printAbilityList();
         clientController.getPrinter().println("(enter the numbers seperated by a space)");
-        ArrayList<Integer> abilityIndexes = clientController.getIntList(8); // indexes received range: 0-7
+        ArrayList<Integer> abilityIndexes = clientController.getMyScanner().getIntList(8); // indexes received range: 0-7
         Role roleUnderEdit = serverRoles.get(roleName);
         roleUnderEdit.getAbilities().clear();
         for (int abilityIndex : abilityIndexes) {
@@ -262,7 +262,7 @@ public class Server implements Asset {
         int command = clientController.getMyScanner().getInt(1, 3);
         switch (command) {
             case 1 -> {
-                if (clientController.addFriendsToServer(this)) {
+                if (addFriendsToServer(clientController)) {
                     clientController.getPrinter().printSuccessMessage("friend add");
                 }
             }
@@ -275,6 +275,35 @@ public class Server implements Asset {
             }
         }
         updateThisOnMainServer(clientController);
+    }
+
+    public boolean addFriendsToServer(ClientController clientController) throws IOException, ClassNotFoundException {
+
+        Model user = clientController.getUser();
+        View printer = clientController.getPrinter();
+        MyScanner myScanner = clientController.getMyScanner();
+        MySocket mySocket = clientController.getMySocket();
+
+        printer.println("Who do you want to add to the server?");
+        printer.println("enter the indexes seperated by a space!");
+        printer.printList(user.getFriends());
+        printer.println("enter 0 to select no one");
+
+        ArrayList<String> addedFriends = new ArrayList<>();
+        for (int friendIndex : myScanner.getIntList(user.getFriends().size())) {
+            String friendUsername = user.getFriends().get(friendIndex);
+            addNewMember(friendUsername);
+            addedFriends.add(friendUsername);
+        }
+
+        for (String addedFriend : addedFriends) {
+            boolean DBConnect = mySocket.sendSignalAndGetResponse(new AddFriendToServerAction(unicode, addedFriend));
+            if (!DBConnect) {
+                printer.printErrorMessage("db");
+                return false;
+            }
+        }
+        return true;
     }
 
     private void removeMembersFromServer() {

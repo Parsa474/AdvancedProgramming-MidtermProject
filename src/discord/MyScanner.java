@@ -1,5 +1,6 @@
 package discord;
 
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class MyScanner {
@@ -23,5 +24,29 @@ public class MyScanner {
             }
         }
         return intInput;
+    }
+
+    public ArrayList<Integer> getIntList(int max) {
+        while (true) {
+            try {
+                ArrayList<Integer> output = new ArrayList<>();
+                String input = scanner.nextLine();
+                if ("0".equals(input)) {
+                    return output;
+                }
+                String[] inputs = input.split(" ");
+                for (String indexString : inputs) {
+                    int index = Integer.parseInt(indexString) - 1;
+                    if (index >= 0 && index < max) {
+                        output.add(index);
+                    } else throw new IndexOutOfBoundsException();
+                }
+                return output;
+            } catch (IndexOutOfBoundsException e) {
+                System.err.println("boundary");
+            } catch (NumberFormatException e) {
+                System.err.println("illegal character use");
+            }
+        }
     }
 }

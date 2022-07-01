@@ -287,7 +287,7 @@ public class ClientController {
             return;
         }
         // add some friends to the newly made server if you want
-        DBConnect = addFriendsToServer(newServer);
+        DBConnect = newServer.addFriendsToServer(this);
         if (!DBConnect) {
             printer.printErrorMessage("db");
             return;
@@ -301,52 +301,6 @@ public class ClientController {
 
         Server newlyCreatedServer = mySocket.sendSignalAndGetResponse(new GetServerFromMainServerAction(unicode));
         newlyCreatedServer.enter(this);
-    }
-
-    public boolean addFriendsToServer(Server server) throws IOException, ClassNotFoundException {
-        printer.println("Who do you want to add to the server?");
-        printer.println("enter the indexes seperated by a space!");
-        printer.printList(user.getFriends());
-        printer.println("enter 0 to select no one");
-        ArrayList<String> addedFriends = new ArrayList<>();
-        for (int friendIndex : getIntList(user.getFriends().size())) {
-            String friendUsername = user.getFriends().get(friendIndex);
-            server.addNewMember(friendUsername);
-            addedFriends.add(friendUsername);
-        }
-
-        for (String addedFriend : addedFriends) {
-            boolean DBConnect = mySocket.sendSignalAndGetResponse(new AddFriendToServerAction(server.getUnicode(), addedFriend));
-            if (!DBConnect) {
-                printer.printErrorMessage("db");
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public ArrayList<Integer> getIntList(int max) {
-        while (true) {
-            try {
-                ArrayList<Integer> output = new ArrayList<>();
-                String input = myScanner.getLine();
-                if ("0".equals(input)) {
-                    return output;
-                }
-                String[] inputs = input.split(" ");
-                for (String indexString : inputs) {
-                    int index = Integer.parseInt(indexString) - 1;
-                    if (index >= 0 && index < max) {
-                        output.add(index);
-                    } else throw new IndexOutOfBoundsException();
-                }
-                return output;
-            } catch (IndexOutOfBoundsException e) {
-                printer.printErrorMessage("boundary");
-            } catch (NumberFormatException e) {
-                printer.printErrorMessage("illegal character use");
-            }
-        }
     }
 
     private void enterAServer() throws IOException, ClassNotFoundException {
