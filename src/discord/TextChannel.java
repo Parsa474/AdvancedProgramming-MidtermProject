@@ -1,6 +1,7 @@
 package discord;
 
 import java.io.Serializable;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
@@ -13,6 +14,8 @@ public class TextChannel implements Serializable {
     // maps all the members' username to whether they're in this text channel right now (true) or not (false)
     private final ArrayList<TextChannelMessage> textChannelMessages;
     // holds all the messages exchanged in this text channel
+    private final ArrayList<URL> urls;
+    private final ArrayList<DownloadableFile> files;
 
     // Constructors:
     public TextChannel(String name, Set<String> members) {
@@ -23,9 +26,11 @@ public class TextChannel implements Serializable {
             this.members.put(member, false);
         }
         textChannelMessages = new ArrayList<TextChannelMessage>();
-        for (String s : messages) {
-            textChannelMessages.add(new TextChannelMessage(s));
-        }
+//        for (String s : messages) {
+//            textChannelMessages.add(new TextChannelMessage(s));
+//        }
+        urls = new ArrayList<URL>();
+        files = new ArrayList<DownloadableFile>();
     }
 
     // Getters:
@@ -51,6 +56,14 @@ public class TextChannel implements Serializable {
             messages.add(m.getMessage());
         }
         return messages;
+    }
+
+    public ArrayList<URL> getUrls() {
+        return urls;
+    }
+
+    public ArrayList<DownloadableFile> getFiles() {
+        return files;
     }
 
     // Setters:

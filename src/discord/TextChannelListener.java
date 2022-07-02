@@ -3,6 +3,8 @@ package discord;
 import signals.DBConnectFailSignal;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class TextChannelListener implements Runnable {
 
@@ -18,7 +20,7 @@ public class TextChannelListener implements Runnable {
         Model user = clientController.getUser();
         MySocket mySocket = clientController.getMySocket();
         View printer = clientController.getPrinter();
-
+        ExecutorService executorService = Executors.newCachedThreadPool();
         Object inObject;
         while (mySocket.isConnected()) {
             try {
@@ -33,6 +35,10 @@ public class TextChannelListener implements Runnable {
                     printer.println((String) inObject);
                 } else if (inObject instanceof TextChannelMessage) {
                     printer.println(((TextChannelMessage) inObject).getMessage());
+                } else if (inObject instanceof DownloadURL downloadUrl) {
+                    executorService.execute(new HttpDownloader(user.getUsername(), downloadUrl.getUrl(), downloadUrl.getFileName(), printer));
+                } else if (inObject instanceof DownloadableFile downloadingFile) {
+                    executorService.execute(new FileDownloader(user.getUsername(), downloadingFile, printer));
                 } else if (inObject instanceof Model) {
                     synchronized (user.getUsername()) {  // should it be user or user.getUsername() ??????????????????????????
                         user.getUsername().notify();

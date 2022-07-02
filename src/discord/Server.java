@@ -476,9 +476,14 @@ public class Server implements Asset {
 
         // sending message
         printer.println("enter \"#exit\" to exit the chat");
+        printer.println("enter \"#help\" to see the commands guide");
         while (true) {
             String message = myScanner.getLine();
             try {
+                if (message.toLowerCase().startsWith("/pin ") && !getAllAbilities(myUsername).contains(Ability.PinMessage)) {
+                    printer.printErrorMessage("permission");
+                    continue;
+                }
                 mySocket.write(new TextChannelChatAction(myUsername, message, unicode, index, receivers));
                 if (message.equals("#exit")) {
                     break;

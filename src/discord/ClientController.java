@@ -6,6 +6,8 @@ import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.InvalidPropertiesFormatException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ClientController {
     // Fields:
@@ -160,6 +162,7 @@ public class ClientController {
 
     private Runnable getPrivateChatListener() {
         return () -> {
+            ExecutorService executorService = Executors.newCachedThreadPool();
             Object inObject;
             while (mySocket.isConnected()) {
                 try {
@@ -176,6 +179,10 @@ public class ClientController {
                         if ((Boolean) inObject) {    // true if seen by the friend immediately
                             printer.println("(seen)");
                         }
+                    } else if (inObject instanceof DownloadURL downloadUrl) {
+                        executorService.execute(new HttpDownloader(user.getUsername(), downloadUrl.getUrl(), downloadUrl.getFileName(), printer));
+                    } else if (inObject instanceof DownloadableFile downloadingFile) {
+                        executorService.execute(new FileDownloader(user.getUsername(), downloadingFile, printer));
                     } else if (inObject instanceof Model) {
                         synchronized (user.getUsername()) {
                             user.getUsername().notify();
@@ -219,6 +226,7 @@ public class ClientController {
 
         // sending message
         printer.println("enter \"#exit\" to exit the chat");
+        printer.println("enter \"#help\" to see the commands guide");
         while (true) {
             String message = myScanner.getLine();
             try {

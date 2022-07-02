@@ -1,8 +1,10 @@
 package signals;
 
+import discord.DownloadableFile;
 import mainServer.MainServer;
 import discord.Model;
 
+import java.net.URL;
 import java.util.ArrayList;
 
 public class CheckFriendRequestsAction implements Action {
@@ -33,9 +35,13 @@ public class CheckFriendRequestsAction implements Action {
 
             user.getIsInChat().put(requesterUsername, false);
             user.getPrivateChats().put(requesterUsername, new ArrayList<>());
+            user.getUrlsOfPrivateChat().put(requesterUsername, new ArrayList<URL>());
+            user.getFilesOfPrivateChat().put(requesterUsername, new ArrayList<DownloadableFile>());
 
             requester.getIsInChat().put(username, false);
             requester.getPrivateChats().put(username, new ArrayList<>());
+            requester.getUrlsOfPrivateChat().put(username, new ArrayList<URL>());
+            requester.getFilesOfPrivateChat().put(username, new ArrayList<DownloadableFile>());
 
             DBConnect = MainServer.updateDatabase(requester);
         }

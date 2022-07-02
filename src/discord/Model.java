@@ -1,5 +1,6 @@
 package discord;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -17,6 +18,8 @@ public class Model implements Asset {
     // maps all the friends' usernames to whether this user is in their private char (true) or not (false)
     private final HashMap<String, ArrayList<String>> privateChats;
     // maps all the friend's usernames to all the exchanged messages between this user and them
+    private final HashMap<String, ArrayList<URL>> urlsOfPrivateChat;
+    private final HashMap<String, ArrayList<DownloadableFile>> filesOfPrivateChat;
     private final ArrayList<Integer> servers;
     // holds only the unicode of the servers this user is a part of
 
@@ -31,6 +34,8 @@ public class Model implements Asset {
         friends = new LinkedList<>();
         isInChat = new HashMap<>();
         privateChats = new HashMap<>();
+        urlsOfPrivateChat = new HashMap<>();
+        filesOfPrivateChat = new HashMap<>();
         servers = new ArrayList<>();
     }
 
@@ -69,6 +74,14 @@ public class Model implements Asset {
 
     public HashMap<String, ArrayList<String>> getPrivateChats() {
         return privateChats;
+    }
+
+    public HashMap<String, ArrayList<URL>> getUrlsOfPrivateChat() {
+        return urlsOfPrivateChat;
+    }
+
+    public HashMap<String, ArrayList<DownloadableFile>> getFilesOfPrivateChat() {
+        return filesOfPrivateChat;
     }
 
     public ArrayList<Integer> getServers() {
