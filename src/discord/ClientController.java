@@ -50,7 +50,7 @@ public class ClientController {
         outer:
         while (true) {
             printer.printLoggedInMenu();
-            int command = myScanner.getInt(1, 8);
+            int command = myScanner.getInt(1, 10);
             // update user from the Main Server
             user = mySocket.sendSignalAndGetResponse(new GetUserFromMainServerAction(user.getUsername()));
             if (user == null) {
@@ -59,17 +59,24 @@ public class ClientController {
             }
             switch (command) {
                 case 1 -> sendFriendRequest();
-                case 2 -> sendRequestIndex();
-                case 3 -> privateChat();
-                case 4 -> createNewServer();
-                case 5 -> enterAServer();
-                case 6 -> chaneMyUserInfo();
-                case 7 -> {
+                case 2 -> blockAUser();
+                case 3 -> {
+                    boolean keepGoing;
+                    do {
+                        keepGoing = unblockAUser();
+                    } while (keepGoing);
+                }
+                case 4 -> acceptOrRejectFriendRequests();
+                case 5 -> privateChat();
+                case 6 -> createNewServer();
+                case 7 -> enterAServer();
+                case 8 -> chaneMyUserInfo();
+                case 9 -> {
                     mySocket.write(new LogoutAction());
                     user = null;
                     break outer;
                 }
-                case 8 -> System.exit(0);
+                case 10 -> System.exit(0);
             }
         }
     }
@@ -77,6 +84,7 @@ public class ClientController {
     private void sendFriendRequest() {
         String username;
         try {
+            outer:
             while (true) {
                 printer.printGetMessage("req");
                 printer.printGoBackMessage();
@@ -92,25 +100,96 @@ public class ClientController {
                     printer.printErrorMessage("already friend");
                     return;
                 }
-                Boolean success = mySocket.sendSignalAndGetResponse(new SendFriendRequestAction(user.getUsername(), username));
+                if (user.getFriendRequests().contains(username)) {
+                    printer.println("Check your pending friend requests! :)");
+                    return;
+                }
+                int scenario = mySocket.sendSignalAndGetResponse(new SendFriendRequestAction(user.getUsername(), username));
+                switch (scenario) {
+                    case 0 -> printer.printErrorMessage("not found username");
+                    case 1 -> printer.printErrorMessage("already sent");
+                    case 2 -> printer.printErrorMessage("block");
+                    case 3 -> printer.printErrorMessage("db");
+                    case 4 -> {
+                        printer.printSuccessMessage("friend request");
+                        break outer;
+                    }
+                }
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void blockAUser() {
+        String beingBlocked;
+        try {
+            while (true) {
+                printer.printGetMessage("block");
+                printer.printGoBackMessage();
+                beingBlocked = myScanner.getLine();
+                if ("".equals(beingBlocked)) {
+                    return;
+                }
+                if (user.getUsername().equals(beingBlocked)) {
+                    printer.printErrorMessage("block yourself");
+                    return;
+                }
+                Boolean success = mySocket.sendSignalAndGetResponse(new BlockAction(user.getUsername(), beingBlocked));
                 if (success != null) {
                     if (success) {
-                        printer.printSuccessMessage("friend request");
+                        printer.printSuccessMessage("block");
                     } else {
-                        printer.printErrorMessage("already sent");
+                        printer.printErrorMessage("db");
                     }
                     break;
                 } else {
                     printer.printErrorMessage("not found username");
-                    printer.printErrorMessage("(Or could not connect to the database)");
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 
-    private void sendRequestIndex() {
+    private boolean unblockAUser() {
+        int beingUnblockedIndex;
+        boolean DBConnect = false;
+        try {
+            printer.printGetMessage("unblock");
+            printer.printList(user.getBlockedList());
+            printer.printGoBackMessage(0);
+            beingUnblockedIndex = myScanner.getInt(0, user.getBlockedList().size());
+            if (beingUnblockedIndex == 0) {
+                return true;
+            }
+            user.getBlockedList().remove(beingUnblockedIndex);
+            DBConnect = mySocket.sendSignalAndGetResponse(new UpdateUserOnMainServerAction(user));
+            if (DBConnect) {
+                printer.printSuccessMessage("unblock");
+            } else {
+                printer.printErrorMessage("db");
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return keepGoing(DBConnect);
+    }
+
+    public Boolean keepGoing(boolean DBConnect) {
+        if (!DBConnect) {
+            printer.printErrorMessage("db");
+            return null;
+        }
+        boolean keepGoing = false;
+        printer.printKeepGoingMenu();
+        if (myScanner.getInt(1, 2) == 1) {
+            keepGoing = true;
+        }
+        return keepGoing;
+    }
+
+    private void acceptOrRejectFriendRequests() {
         while (true) {
             if (user.getFriendRequests().size() == 0) {
                 printer.println("Your friend request list is empty");

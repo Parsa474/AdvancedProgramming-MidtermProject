@@ -359,20 +359,7 @@ public class Server implements Asset {
 
         // send the signal to the removed member that they're removed and update this on MainServer
         DBConnect = mySocket.sendSignalAndGetResponse(new removeFriendFromServerAction(unicode, beingRemovedOrBannedMember));
-        return keepGoing(printer, myScanner, DBConnect);
-    }
-
-    private Boolean keepGoing(View printer, MyScanner myScanner, boolean DBConnect) {
-        if (!DBConnect) {
-            printer.printErrorMessage("db");
-            return null;
-        }
-        boolean keepGoing = false;
-        printer.printKeepGoingMenu();
-        if (myScanner.getInt(1, 2) == 1) {
-            keepGoing = true;
-        }
-        return keepGoing;
+        return clientController.keepGoing(DBConnect);
     }
 
     private void changeTextChannels(ClientController clientController, String myUsername) throws IOException, ClassNotFoundException {
@@ -528,7 +515,7 @@ public class Server implements Asset {
 
         // update this server on the MainServer
         boolean DBConnect = clientController.getMySocket().sendSignalAndGetResponse(new UpdateServerOnMainServerAction(this));
-        return keepGoing(printer, myScanner, DBConnect);
+        return clientController.keepGoing(DBConnect);
     }
 
     private HashSet<Ability> getAllAbilities(String username) {

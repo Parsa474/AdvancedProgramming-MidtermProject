@@ -18,10 +18,12 @@ public class View {
     public void printErrorMessage(String error) {
         switch (error) {
             case "IO" -> System.err.println("I/O error occurred!");
-            case "yourself" -> System.err.println("You can't send a friend request to yourself!");
+            case "friend yourself" -> System.err.println("You can't send a friend request to yourself!");
+            case "block yourself" -> System.err.println("You can't block yourself!");
             case "already friend" -> System.err.println("This user is already your friend!");
             case "already sent" -> System.err.println("You have already sent a friend request to this user!");
             case "not found username" -> System.err.println("A user by this username was not found!");
+            case "block" -> System.err.println("This user has blocked ou! You can't send them a friend request");
             case "boundary" -> System.err.println("Out of boundary index used!");
             case "length" -> System.err.println("Invalid input length");
             case "login" -> System.err.println("A username by this password does not exist!");
@@ -30,8 +32,7 @@ public class View {
             case "illegal character use" -> System.err.println("Do not use illegal characters!");
             case "main server" -> System.err.println("Could not connect to the main server");
             case "change fail" -> System.err.println("Could not change the field, conditions not met");
-            case "server name change" ->
-                    System.err.println("You don't have the permission to change the server's name!");
+            case "server name change" -> System.err.println("You don't have the permission to change the server's name!");
             case "db" -> System.err.println("Could not connect to the database!");
             case "unknown" -> System.err.println("An unknown error occurred!");
             case "enter server" -> System.err.println("Could not enter the server!");
@@ -45,6 +46,10 @@ public class View {
         System.out.println("(Press enter to go back)");
     }
 
+    public void printGoBackMessage(int code) {
+        System.out.println("(Press " + code + " to go back)");
+    }
+
     public void printCancelMessage() {
         System.out.println("Press enter to cancel the process");
     }
@@ -52,8 +57,9 @@ public class View {
     public void printGetMessage(String field) {
         switch (field) {
             case "req" -> System.out.println("Enter the username of the user you want to send a friend request to");
-            case "index" ->
-                    System.out.println("Enter the index you want to accept followed by 'A' or reject followed by 'R'");
+            case "block" -> System.out.println("Enter the username of the user you want to block");
+            case "unblock" -> System.out.println("Enter the username of the user you want to unblock");
+            case "index" -> System.out.println("Enter the index you want to accept followed by 'A' or reject followed by 'R'");
             default -> {
                 System.out.println("Enter your " + field);
                 if (field.equals("phone number")) System.out.println("(Optional, simply enter 0 if you want to skip)");
@@ -63,10 +69,8 @@ public class View {
 
     public void printConditionMessage(String field) {
         switch (field) {
-            case "username" ->
-                    System.out.println("Should only consist English letters/numbers and be of a minimum length of 6 characters");
-            case "password" ->
-                    System.out.println("Should consist of at least 1 capital letter, 1 small letter, 1 digit, and at least be of a length of 8");
+            case "username" -> System.out.println("Should only consist English letters/numbers and be of a minimum length of 6 characters");
+            case "password" -> System.out.println("Should consist of at least 1 capital letter, 1 small letter, 1 digit, and at least be of a length of 8");
             case "email" -> {
                 System.out.println("Should have exactly one @ and not be empty before and after the @ and also have at least one dot (.) after the @");
                 System.out.println("and not start or finish with dots and not have consecutive dots");
@@ -80,6 +84,8 @@ public class View {
             case "signUp" -> System.out.println("Signed up successfully!");
             case "login" -> System.out.println("Logged in successfully");
             case "friend request" -> System.out.println("The request was sent successfully");
+            case "block" -> System.out.println("Blocked successfully!");
+            case "unblock" -> System.out.println("Unblocked successfully!");
             case "accept" -> System.out.println("The specified user's request was accepted");
             case "reject" -> System.out.println("The specified user's request was rejected");
             case "exit" -> System.out.println("Exited successfully!");
@@ -96,13 +102,15 @@ public class View {
 
     public void printLoggedInMenu() {
         System.out.println("1. Send a friend request");
-        System.out.println("2. Check friend request list");
-        System.out.println("3. Chat with a friend");
-        System.out.println("4. Make a new server");
-        System.out.println("5. Go to one of my servers");
-        System.out.println("6. Change my user info");
-        System.out.println("7. Log out");
-        System.out.println("8. Exit");
+        System.out.println("2. Block a user");
+        System.out.println("3. Unblock a blocked user");
+        System.out.println("4. Check friend request list");
+        System.out.println("5. Chat with a friend");
+        System.out.println("6. Make a new server");
+        System.out.println("7. Go to one of my servers");
+        System.out.println("8. Change my user info");
+        System.out.println("9. Log out");
+        System.out.println("10. Exit");
     }
 
     public void printList(ArrayList<String> list) {

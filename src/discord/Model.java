@@ -14,6 +14,7 @@ public class Model implements Asset {
     private Status status;
     private final LinkedList<String> friendRequests;
     private final LinkedList<String> friends;
+    private final LinkedList<String> blockedList;
     private final HashMap<String, Boolean> isInChat;
     // maps all the friends' usernames to whether this user is in their private char (true) or not (false)
     private final HashMap<String, ArrayList<String>> privateChats;
@@ -32,6 +33,7 @@ public class Model implements Asset {
         status = Status.Offline;
         friendRequests = new LinkedList<>();
         friends = new LinkedList<>();
+        blockedList = new LinkedList<>();
         isInChat = new HashMap<>();
         privateChats = new HashMap<>();
         urlsOfPrivateChat = new HashMap<>();
@@ -66,6 +68,10 @@ public class Model implements Asset {
 
     public LinkedList<String> getFriends() {
         return friends;
+    }
+
+    public LinkedList<String> getBlockedList() {
+        return blockedList;
     }
 
     public HashMap<String, Boolean> getIsInChat() {

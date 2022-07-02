@@ -15,17 +15,20 @@ public class SendFriendRequestAction implements Action {
     @Override
     public Object act() {
         if (!MainServer.getUsers().containsKey(username)) {
-            return null;
+            return 0;
         } else {
             Model user = MainServer.getUsers().get(username);
             if (user.getFriendRequests().contains(requester)) {
-                return false;
+                return 1;
+            }
+            if (user.getBlockedList().contains(requester)) {
+                return 2;
             }
             user.getFriendRequests().add(requester);
             if (!MainServer.updateDatabase(user)) {
-                return null;
+                return 3;
             }
-            return true;
+            return 4;
         }
     }
 }
