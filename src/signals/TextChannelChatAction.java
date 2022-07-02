@@ -43,6 +43,9 @@ public class TextChannelChatAction implements Action {
                 if (message.equalsIgnoreCase("#files")) {
                     return showList(MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getFiles());
                 }
+                if (message.equalsIgnoreCase("#help")) {
+                    return helpMenu();
+                }
 
                 // upload file
                 if (message.startsWith("/file ")) {
@@ -98,7 +101,7 @@ public class TextChannelChatAction implements Action {
                         MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getUrls().add(url);
 
                         message = command[1];
-                    } else if (command.length > 1 && (command[0].equalsIgnoreCase("#help") || command[0].equalsIgnoreCase("/pin") ||
+                    } else if (command.length > 1 && (command[0].equalsIgnoreCase("/pin") ||
                             command[0].equalsIgnoreCase("/like") || command[0].equalsIgnoreCase("/dislike") ||
                             command[0].equalsIgnoreCase("/laugh") || command[0].equalsIgnoreCase("#pin") ||
                             command[0].equalsIgnoreCase("#likes") || command[0].equalsIgnoreCase("#dislikes") ||
@@ -110,9 +113,6 @@ public class TextChannelChatAction implements Action {
                             return "WARNING: invalid number of message. out of boundary";
                         } else {
                             switch (command[0].toLowerCase()) {
-                                case "#help" -> {
-                                    return helpMenu();
-                                }
                                 case "/pin" -> {
                                     pinMessage(MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex), indexOfMessage);
                                     message = "NOTIFICATION: " + sender + " pinned \"" + MainServer.getServers().get(serverUnicode).getTextChannels().get(textChannelIndex).getMessages().get(indexOfMessage) + "\"";
@@ -223,13 +223,22 @@ public class TextChannelChatAction implements Action {
 
     private String helpMenu() {
         return """
-                /url <URL_Link> -> to send link of a file so others can download it
-                /file <file_address> -> to upload a file from your pc
-                #urls -> prints list of all URLs in the chat
-                #files -> prints list of all files in the chat
-                #url <index> <target_file_name> -> download the specified url and save it with <target_file_name> name
-                #file <index> -> download the specified file and save it without changing the original name of the file
-                #file <index> <target_file_name> -> download the specified file and save it with <target_file_name> name
+                /url <URL_Link>  -> to send link of a file so others can download it
+                /file <file_address>  -> to upload a file from your pc
+                #urls  -> prints list of all URLs in the chat
+                #files  -> prints list of all files in the chat
+                #url <index> <target_file_name>  -> download the specified url and save it with <target_file_name> name
+                #file <index>  -> download the specified file and save it without changing the original name of the file
+                #file <index> <target_file_name>  -> download the specified file and save it with <target_file_name> name
+                /pin <index_of_message>  -> to pin message with number <index_of_message>
+                /like <index_of_message>  -> to like message with number <index_of_message>
+                /dislike <index_of_message>  -> to dislike message with number <index_of_message>
+                /laugh <index_of_message>  -> to laugh at message with number <index_of_message>
+                #pin  -> to show pinned message of the textChannel
+                #likes <index_of_message>  -> to show likes to message with number <index_of_message>
+                #dislikes <index_of_message>  -> to show dislikes to message with number <index_of_message>
+                #laughs <index_of_message>  -> to show laughs at message with number <index_of_message>
+                #reactions <index_of_message>  -> to show all reactions to message with number <index_of_message>
                 """;
     }
 

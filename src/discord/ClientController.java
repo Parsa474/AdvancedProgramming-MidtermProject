@@ -64,7 +64,7 @@ public class ClientController {
                     boolean keepGoing;
                     do {
                         keepGoing = unblockAUser();
-                    } while (keepGoing);
+                    } while (keepGoing && user.getBlockedList().size() > 0);
                 }
                 case 4 -> acceptOrRejectFriendRequests();
                 case 5 -> privateChat();
@@ -159,8 +159,8 @@ public class ClientController {
             printer.printGetMessage("unblock");
             printer.printList(user.getBlockedList());
             printer.printGoBackMessage(0);
-            beingUnblockedIndex = myScanner.getInt(0, user.getBlockedList().size());
-            if (beingUnblockedIndex == 0) {
+            beingUnblockedIndex = myScanner.getInt(0, user.getBlockedList().size()) - 1;
+            if (beingUnblockedIndex == -1) {
                 return true;
             }
             user.getBlockedList().remove(beingUnblockedIndex);
@@ -207,6 +207,9 @@ public class ClientController {
             try {
                 if (inputs.length == 2) {
                     int index = Character.getNumericValue(inputs[0]) - 1;
+                    if (index < 0 || index >= user.getFriendRequests().size()) {
+                        throw new IndexOutOfBoundsException();
+                    }
                     switch (inputs[1]) {
                         case 'A' -> accept = true;
                         case 'R' -> accept = false;
@@ -522,6 +525,7 @@ public class ClientController {
                 printer.printGetMessage("password");
                 printer.printConditionMessage("password");
                 String password = myScanner.getLine();
+                if ("".equals(password)) return null;
                 signUpOrChangeInfoAction.setPassword(password);
                 if (mySocket.sendSignalAndGetResponse(signUpOrChangeInfoAction)) {
                     return password;

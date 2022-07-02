@@ -39,7 +39,9 @@ public class PrivateChatAction implements Action {
                 if (message.equalsIgnoreCase("#files")) {
                     return showList(senderUser.getFilesOfPrivateChat().get(receiver));
                 }
-
+                if (message.equalsIgnoreCase("#help")) {
+                    return helpMenu();
+                }
                 if (message.startsWith("/file ")) {
                     String directory = message.substring(6);
                     File file = new File(directory);
@@ -59,9 +61,6 @@ public class PrivateChatAction implements Action {
                     String[] command = message.split(" ");
                     if (command.length > 1) {
                         switch (command[0].toLowerCase()) {
-                            case "#help" -> {
-                                return helpMenu();
-                            }
                             case "/url" -> {
                                 URL url;
                                 try {

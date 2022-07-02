@@ -440,9 +440,18 @@ public class Server implements Asset {
         MySocket mySocket = clientController.getMySocket();
 
         selfUpdate(clientController);
-        printer.printTextChannelList(textChannels);
-        int index = clientController.getMyScanner().getInt(1, textChannels.size()) - 1;
-        TextChannel selectedTextChannel = textChannels.get(index);
+        ArrayList<TextChannel> myTextChannels = printer.printTextChannelListForMembers(textChannels, myUsername);
+        if (myTextChannels.size() == 0) {
+            printer.println("You're not a part of any text channel on this server!");
+            return;
+        }
+        printer.printGoBackMessage(0);
+        int index = clientController.getMyScanner().getInt(0, myTextChannels.size()) - 1;
+        if (index == -1) {
+            return;
+        }
+        TextChannel selectedTextChannel = myTextChannels.get(index);
+        index = textChannels.indexOf(selectedTextChannel);
 
         selectedTextChannel.getMembers().replace(myUsername, true);
         if (!updateThisOnMainServer(clientController)) {
@@ -476,11 +485,12 @@ public class Server implements Asset {
                     break;
                 }
             } catch (IOException e) {
+                textChannels.get(index).getMembers().replace(myUsername, false);
                 printer.printErrorMessage("IO");
             }
         }
 
-        synchronized (user.getUsername()) {  // should it be user or user.getUsername() ??????????????????????????
+        synchronized (user.getUsername()) {
             try {
                 user.getUsername().wait();
             } catch (InterruptedException e) {
@@ -500,18 +510,23 @@ public class Server implements Asset {
         View printer = clientController.getPrinter();
         MyScanner myScanner = clientController.getMyScanner();
 
-        printer.println("Which text channel do you want to limit a member from?");
+        printer.println("Which text channel do you want to limit/give back the access to a member from?");
         printer.printTextChannelList(textChannels);
         int index = myScanner.getInt(1, textChannels.size()) - 1;
-        printer.println("Enter the name of the member you want to limit from this text channel (invalid name will be ignored)");
+        printer.println("Enter the name of the member you want to limit/give access back from this text channel (invalid name will be ignored)");
         selfUpdate(clientController);
         printer.printSetList(textChannels.get(index).getMembers().keySet());
         printer.printGoBackMessage();
-        String beingLimited = myScanner.getLine();
-        if ("".equals(beingLimited)) {
+        String member = myScanner.getLine();
+        if ("".equals(member)) {
             return false;
         }
-        textChannels.get(index).getMembers().remove(beingLimited);
+        printer.println("1. Limit");
+        printer.println("2. Give access back");
+        switch (myScanner.getInt(1, 2)) {
+            case 1 -> textChannels.get(index).getMembers().remove(member);
+            case 2 -> textChannels.get(index).getMembers().put(member, false);
+        }
 
         // update this server on the MainServer
         boolean DBConnect = clientController.getMySocket().sendSignalAndGetResponse(new UpdateServerOnMainServerAction(this));

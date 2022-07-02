@@ -32,7 +32,8 @@ public class View {
             case "illegal character use" -> System.err.println("Do not use illegal characters!");
             case "main server" -> System.err.println("Could not connect to the main server");
             case "change fail" -> System.err.println("Could not change the field, conditions not met");
-            case "server name change" -> System.err.println("You don't have the permission to change the server's name!");
+            case "server name change" ->
+                    System.err.println("You don't have the permission to change the server's name!");
             case "db" -> System.err.println("Could not connect to the database!");
             case "unknown" -> System.err.println("An unknown error occurred!");
             case "enter server" -> System.err.println("Could not enter the server!");
@@ -59,7 +60,8 @@ public class View {
             case "req" -> System.out.println("Enter the username of the user you want to send a friend request to");
             case "block" -> System.out.println("Enter the username of the user you want to block");
             case "unblock" -> System.out.println("Enter the username of the user you want to unblock");
-            case "index" -> System.out.println("Enter the index you want to accept followed by 'A' or reject followed by 'R'");
+            case "index" ->
+                    System.out.println("Enter the index you want to accept followed by 'A' or reject followed by 'R'");
             default -> {
                 System.out.println("Enter your " + field);
                 if (field.equals("phone number")) System.out.println("(Optional, simply enter 0 if you want to skip)");
@@ -69,8 +71,10 @@ public class View {
 
     public void printConditionMessage(String field) {
         switch (field) {
-            case "username" -> System.out.println("Should only consist English letters/numbers and be of a minimum length of 6 characters");
-            case "password" -> System.out.println("Should consist of at least 1 capital letter, 1 small letter, 1 digit, and at least be of a length of 8");
+            case "username" ->
+                    System.out.println("Should only consist English letters/numbers and be of a minimum length of 6 characters");
+            case "password" ->
+                    System.out.println("Should consist of at least 1 capital letter, 1 small letter, 1 digit, and at least be of a length of 8");
             case "email" -> {
                 System.out.println("Should have exactly one @ and not be empty before and after the @ and also have at least one dot (.) after the @");
                 System.out.println("and not start or finish with dots and not have consecutive dots");
@@ -137,6 +141,19 @@ public class View {
         }
     }
 
+    public ArrayList<TextChannel> printTextChannelListForMembers(ArrayList<TextChannel> list, String username) {
+        ArrayList<TextChannel> myTextChannels = new ArrayList<>();
+        int num = 1;
+        for (TextChannel textChannel : list) {
+            if (textChannel.getMembers().containsKey(username)) {
+                System.out.printf("%d. %s\n", num, textChannel.getName());
+                num++;
+                myTextChannels.add(textChannel);
+            }
+        }
+        return myTextChannels;
+    }
+
     public void printServerMenu() {
         System.out.println("1. Change server info (server name, add/edit roles)");
         System.out.println("2. Add/remove/ban a member");
@@ -201,7 +218,7 @@ public class View {
         System.out.println("1. Add a new text channel");
         System.out.println("2. Remove a text channel");
         System.out.println("3. Rename a text channel");
-        System.out.println("4. Limit a member from a text channel");
+        System.out.println("4. Limit/give access to a member from a text channel");
         System.out.println("5. Go back");
     }
 }
