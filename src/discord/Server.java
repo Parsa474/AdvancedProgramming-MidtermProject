@@ -485,7 +485,7 @@ public class Server implements Asset {
                     break;
                 }
             } catch (IOException e) {
-                textChannels.get(index).getMembers().replace(myUsername, false);
+//                textChannels.get(index).getMembers().replace(myUsername, false);
                 printer.printErrorMessage("IO");
             }
         }

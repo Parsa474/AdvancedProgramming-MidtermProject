@@ -59,10 +59,6 @@ public class ClientHandler implements Runnable {
                     }
                 }
             } catch (IOException | ClassNotFoundException e) {
-                for (String friend : user.getIsInChat().keySet()) {
-                    user.getIsInChat().replace(friend, false);
-                }
-                MainServer.updateDatabase(user);
                 clientHandlers.remove(this);
                 mySocket.closeEverything();
                 if (user != null) {
